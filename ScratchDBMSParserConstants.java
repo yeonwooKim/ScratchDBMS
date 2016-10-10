@@ -67,31 +67,33 @@ public interface ScratchDBMSParserConstants {
   /** RegularExpression Id. */
   int COMMA = 33;
   /** RegularExpression Id. */
-  int UNDERSCORE = 34;
+  int PERIOD = 34;
   /** RegularExpression Id. */
-  int SIGN = 35;
+  int UNDERSCORE = 35;
   /** RegularExpression Id. */
-  int DIGIT = 36;
+  int ASTERISK = 36;
   /** RegularExpression Id. */
-  int ALPHABET = 37;
+  int SIGN = 37;
   /** RegularExpression Id. */
-  int ASTERISK = 38;
+  int COMP_OP = 38;
   /** RegularExpression Id. */
-  int PERIOD = 39;
+  int LEGAL_IDENT = 39;
   /** RegularExpression Id. */
-  int CHAR_STRING = 40;
+  int INT_VALUE = 40;
   /** RegularExpression Id. */
-  int INT_VALUE = 41;
+  int DATE_VALUE = 41;
   /** RegularExpression Id. */
-  int DATE_VALUE = 42;
+  int CHAR_STRING = 42;
   /** RegularExpression Id. */
-  int QUOTE = 43;
+  int NON_QUOTE_CHAR = 43;
   /** RegularExpression Id. */
-  int NON_QUOTE_CHAR = 44;
+  int DIGIT = 44;
   /** RegularExpression Id. */
-  int NON_QUOTE_SPECIAL_CHAR = 45;
+  int ALPHABET = 45;
   /** RegularExpression Id. */
-  int COMP_OP = 46;
+  int NON_QUOTE_SPECIAL_CHAR = 46;
+  /** RegularExpression Id. */
+  int QUOTE = 47;
 
   /** Lexical state. */
   int DEFAULT = 0;
@@ -132,19 +134,20 @@ public interface ScratchDBMSParserConstants {
     "\"(\"",
     "\")\"",
     "\",\"",
-    "\"_\"",
-    "<SIGN>",
-    "<DIGIT>",
-    "<ALPHABET>",
-    "\"*\"",
     "\".\"",
-    "<CHAR_STRING>",
+    "\"_\"",
+    "\"*\"",
+    "<SIGN>",
+    "<COMP_OP>",
+    "<LEGAL_IDENT>",
     "<INT_VALUE>",
     "<DATE_VALUE>",
-    "\"\\\'\"",
+    "<CHAR_STRING>",
     "<NON_QUOTE_CHAR>",
+    "<DIGIT>",
+    "<ALPHABET>",
     "<NON_QUOTE_SPECIAL_CHAR>",
-    "<COMP_OP>",
+    "\"\\\'\"",
   };
 
 }

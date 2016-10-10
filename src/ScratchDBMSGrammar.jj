@@ -112,19 +112,20 @@ TOKEN :
 | < LEFT_PAREN : "(" >
 | < RIGHT_PAREN : ")" >
 | < COMMA : "," >
-| < UNDERSCORE : "_" >
-| < SIGN : "+" | "-" >
-| < DIGIT : [ "0"-"9" ] >
-| < ALPHABET : [ "A"-"Z", "a"-"z" ] >
-| < ASTERISK : "*" >
 | < PERIOD : "." >
-| < CHAR_STRING : < QUOTE > (< NON_QUOTE_CHAR >)* < QUOTE > >
+| < UNDERSCORE : "_" >
+| < ASTERISK : "*" >
+| < SIGN : "+" | "-" >
+| < COMP_OP : "<" | ">" | "=" | ">=" | "<=" | "!=" >
+| < LEGAL_IDENT : < ALPHABET > ( < ALPHABET > | < UNDERSCORE > )* >
 | < INT_VALUE : (< SIGN >)? (< DIGIT >)+ >
 | < DATE_VALUE : < DIGIT >< DIGIT >< DIGIT >< DIGIT > "-" < DIGIT >< DIGIT > "-" < DIGIT >< DIGIT > >
-| < QUOTE : "\'" >
+| < CHAR_STRING : < QUOTE > (< NON_QUOTE_CHAR >)* < QUOTE > >
 | < NON_QUOTE_CHAR : < DIGIT > | < ALPHABET > | < NON_QUOTE_SPECIAL_CHAR > | " " >
+| < DIGIT : [ "0"-"9" ] >
+| < ALPHABET : [ "A"-"Z", "a"-"z" ] >
 | < NON_QUOTE_SPECIAL_CHAR : "!" | "@" | "#" | "$" | "%" | "^" | "&" | "*" >
-| < COMP_OP : "<" | ">" | "=" | ">=" | "<=" | "!=" >
+| < QUOTE : "\'" >
 }
 
 void command() :
@@ -214,7 +215,7 @@ void createTableQuery() :
 {}
 {
   < CREATE_TABLE >
-	legalIdentifier()
+	< LEGAL_IDENT >
   tableElementList()
 }
 
@@ -241,7 +242,7 @@ void tableElement() :
 void columnDefinition() :
 {}
 {
-	legalIdentifier()
+	< LEGAL_IDENT >
   dataType()
   (
     < NOT_NULL >
@@ -268,7 +269,7 @@ void referentialConstraint() :
   < FOREIGN_KEY >
   columnNameList()
   < REFERENCES >
-	legalIdentifier()
+	< LEGAL_IDENT >
   columnNameList()
 }
 
@@ -276,10 +277,10 @@ void columnNameList() :
 {}
 {
   < LEFT_PAREN >
-	legalIdentifier()
+	< LEGAL_IDENT >
   (
     < COMMA >
-		legalIdentifier()
+		< LEGAL_IDENT >
   )*
   < RIGHT_PAREN >
 }
@@ -291,44 +292,24 @@ void dataType() :
 | (
     < CHAR >
     < LEFT_PAREN >
-    intValue()
+		< INT_VALUE >
     < RIGHT_PAREN >
   )
 | < DATE >
-}
-
-void intValue() :
-{}
-{
-  (
-    < SIGN >
-  )?
-  (
-    < DIGIT >
-  )+
-}
-
-void legalIdentifier() :
-{}
-{
-  < ALPHABET >
-  (
-    < ALPHABET > | < UNDERSCORE >
-  )*
 }
 
 void dropTableQuery() :
 {}
 {
     < DROP_TABLE >
-		legalIdentifier()
+		< LEGAL_IDENT >
 }
 
 void descQuery() :
 {}
 {
     < DESC >
-		legalIdentifier()
+		< LEGAL_IDENT >
 }
 
 void showTablesQuery() :
@@ -357,7 +338,7 @@ void selectedColumn() :
 {}
 {
 		tableColumn()
-    ( < AS > legalIdentifier() )?
+    ( < AS > < LEGAL_IDENT > )?
 }
 
 void tableExpression() :
@@ -383,8 +364,8 @@ void tableReferenceList() :
 void referredTable() :
 {}
 {
-		legalIdentifier()
-    ( < AS > legalIdentifier() )?
+		< LEGAL_IDENT >
+    ( < AS > < LEGAL_IDENT > )?
 }
 
 void whereClause() :
@@ -489,7 +470,7 @@ void insertQuery() :
 {}
 {
     < INSERT_INTO >
-		legalIdentifier()
+		< LEGAL_IDENT >
     insertColumnsAndSource()
 }
 
@@ -519,13 +500,13 @@ void value() :
 void deleteQuery() :
 {}
 {
-    < DELETE_FROM > legalIdentifier()
+    < DELETE_FROM > < LEGAL_IDENT >
     ( whereClause() )?
 }
 
 void tableColumn() :
 {}
 {
-	legalIdentifier()
-	( < PERIOD > legalIdentifier() )?
+	< LEGAL_IDENT >
+	( < PERIOD > < LEGAL_IDENT > )?
 }
