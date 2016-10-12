@@ -7,21 +7,55 @@ options
 
 PARSER_BEGIN(ScratchDBMSParser)
 
+enum Message { SYNTAX_ERROR, CREATE_TABLE, DROP_TABLE, DESC, SELECT, INSERT, DELETE, SHOW_TABLES };
+class MessagePrinter
+{
+	public static void printPrompt()
+	{
+    System.out.print("DB_2014-17184> ");
+	}
+  public static void printMessage(Message q)
+  {
+    switch(q)
+    {
+      case SYNTAX_ERROR:
+        System.out.println("Syntax error");
+        break;
+      case CREATE_TABLE:
+        System.out.println("\'CREATE TABLE\' requested");
+        break;
+      case DROP_TABLE:
+        System.out.println("\'DROP TABLE\' requested");
+        break;
+      case DESC:
+        System.out.println("\'DESC\' requested");
+        break;
+      case SELECT:
+        System.out.println("\'SELECT\' requested");
+        break;
+      case INSERT:
+        System.out.println("\'INSERT\' requested");
+        break;
+      case DELETE:
+        System.out.println("\'DELETE\' requested");
+        break;
+      case SHOW_TABLES:
+        System.out.println("\'SHOW TABLES\' requested");
+        break;
+      default:
+        System.out.println("Syntax error");
+        break;
+    }
+		printPrompt();
+  }
+}
+
 public class ScratchDBMSParser
 {
-  public static final int PRINT_SYNTAX_ERROR = 0;
-  public static final int PRINT_CREATE_TABLE = 1;
-  public static final int PRINT_DROP_TABLE = 2;
-  public static final int PRINT_DESC = 3;
-  public static final int PRINT_SELECT = 4;
-  public static final int PRINT_INSERT = 5;
-  public static final int PRINT_DELETE = 6;
-  public static final int PRINT_SHOW_TABLES = 7;
-
   public static void main(String args[]) throws ParseException
   {
     ScratchDBMSParser parser = new ScratchDBMSParser(System.in);
-    System.out.print("DB_2014-17184> ");
+		MessagePrinter.printPrompt();
 
     while (true)
     {
@@ -31,45 +65,10 @@ public class ScratchDBMSParser
       }
       catch (Exception e)
       {
-        printMessage(PRINT_SYNTAX_ERROR);
+				MessagePrinter.printMessage(Message.SYNTAX_ERROR);
         ScratchDBMSParser.ReInit(System.in);
       }
     }
-  }
-
-  public static void printMessage(int q)
-  {
-    switch(q)
-    {
-      case PRINT_SYNTAX_ERROR:
-        System.out.println("Syntax error");
-        break;
-      case PRINT_CREATE_TABLE:
-        System.out.println("\'CREATE TABLE\' requested");
-        break;
-      case PRINT_DROP_TABLE:
-        System.out.println("\'DROP TABLE\' requested");
-        break;
-      case PRINT_DESC:
-        System.out.println("\'DESC\' requested");
-        break;
-      case PRINT_SELECT:
-        System.out.println("\'SELECT\' requested");
-        break;
-      case PRINT_INSERT:
-        System.out.println("\'INSERT\' requested");
-        break;
-      case PRINT_DELETE:
-        System.out.println("\'DELETE\' requested");
-        break;
-      case PRINT_SHOW_TABLES:
-        System.out.println("\'SHOW TABLES\' requested");
-        break;
-      default:
-        System.out.println("Syntax error");
-        break;
-    }
-    System.out.print("DB_2014-17184> ");
   }
 }
 
@@ -143,64 +142,64 @@ void command() :
 
 void queryList() :
 {
-  int q;
+  Message q;
 }
 {
   (
     q = query()
     < SEMICOLON >
     {
-      printMessage(q);
+      MessagePrinter.printMessage(q);
     }
   )+
 }
 
-int query() :
+Message query() :
 {
-  int q;
+  Message q;
 }
 {
 (
   (
     createTableQuery()
     {
-        q = PRINT_CREATE_TABLE;
+        q = Message.CREATE_TABLE;
     }
   )
 | (
     dropTableQuery()
     {
-        q = PRINT_DROP_TABLE;
+        q = Message.DROP_TABLE;
     }
   )
 | (
     descQuery()
     {
-        q = PRINT_DESC;
+        q = Message.DESC;
     }
   )
 | (
     selectQuery()
     {
-        q = PRINT_SELECT;
+        q = Message.SELECT;
     }
   )
 | (
     insertQuery()
     {
-        q = PRINT_INSERT;
+        q = Message.INSERT;
     }
   )
 | (
     deleteQuery()
     {
-        q = PRINT_DELETE;
+        q = Message.DELETE;
     }
    )
 | (
     showTablesQuery()
     {
-        q = PRINT_SHOW_TABLES;
+        q = Message.SHOW_TABLES;
     }
    )
 )
