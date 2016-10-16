@@ -7,7 +7,10 @@ options
 
 PARSER_BEGIN(ScratchDBMSParser)
 
+/* Message types */
 enum Message { SYNTAX_ERROR, CREATE_TABLE, DROP_TABLE, DESC, SELECT, INSERT, DELETE, SHOW_TABLES };
+
+/* Message printer is in charge of printing prompt and result messages */
 class MessagePrinter
 {
 	public static void printPrompt()
@@ -107,6 +110,7 @@ TOKEN : /* Keywords */
 
 TOKEN :
 {
+	/* ordered properly according to precedence */
   < SEMICOLON : ";" >
 | < LEFT_PAREN : "(" >
 | < RIGHT_PAREN : ")" >
@@ -210,6 +214,7 @@ Message query() :
   )
 }
 
+/* create table statement */
 void createTableQuery() :
 {}
 {
@@ -297,6 +302,7 @@ void dataType() :
 | < DATE >
 }
 
+/* drop table statement */
 void dropTableQuery() :
 {}
 {
@@ -304,6 +310,7 @@ void dropTableQuery() :
 		< LEGAL_IDENT >
 }
 
+/* desc statement */
 void descQuery() :
 {}
 {
@@ -311,12 +318,14 @@ void descQuery() :
 		< LEGAL_IDENT >
 }
 
+/* show tables statement */
 void showTablesQuery() :
 {}
 {
     < SHOW_TABLES >
 }
 
+/* select statement */
 void selectQuery() :
 {}
 {
@@ -376,12 +385,14 @@ void whereClause() :
 void booleanValueExpression() :
 {}
 {
+	/* eliminate left recursion */
     booleanTerm() ( < OR > booleanTerm() )*
 }
 
 void booleanTerm() :
 {}
 {
+	/* eliminate left recursion */
     booleanFactor() ( < AND > booleanFactor() )*
 }
 
@@ -408,6 +419,7 @@ void parenthesizedBooleanExpression() :
 void predicate() :
 {}
 {
+	/* revised to remove lookahead */
 	identifierPredicate() | constantPredicate()
 }
 
@@ -465,6 +477,7 @@ void nullOperation() :
     < IS_NULL > | < IS_NOT_NULL >
 }
 
+/* insert statement */
 void insertQuery() :
 {}
 {
@@ -496,6 +509,7 @@ void value() :
     < NULL > | comparableValue()
 }
 
+/* delete statement */
 void deleteQuery() :
 {}
 {
