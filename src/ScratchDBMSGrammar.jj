@@ -1,0 +1,525 @@
+options
+{
+  static = true;
+  DEBUG_PARSER = false;
+  IGNORE_CASE = true;
+}
+
+PARSER_BEGIN(ScratchDBMSParser)
+
+/* Message types */
+enum Message { SYNTAX_ERROR, CREATE_TABLE, DROP_TABLE, DESC, SELECT, INSERT, DELETE, SHOW_TABLES };
+
+/* Message printer is in charge of printing prompt and result messages */
+class MessagePrinter
+{
+	public static void printPrompt()
+	{
+    System.out.print("DB_2014-17184> ");
+	}
+  public static void printMessage(Message q)
+  {
+    switch(q)
+    {
+      case SYNTAX_ERROR:
+        System.out.println("Syntax error");
+        break;
+      case CREATE_TABLE:
+        System.out.println("\'CREATE TABLE\' requested");
+        break;
+      case DROP_TABLE:
+        System.out.println("\'DROP TABLE\' requested");
+        break;
+      case DESC:
+        System.out.println("\'DESC\' requested");
+        break;
+      case SELECT:
+        System.out.println("\'SELECT\' requested");
+        break;
+      case INSERT:
+        System.out.println("\'INSERT\' requested");
+        break;
+      case DELETE:
+        System.out.println("\'DELETE\' requested");
+        break;
+      case SHOW_TABLES:
+        System.out.println("\'SHOW TABLES\' requested");
+        break;
+      default:
+        System.out.println("Syntax error");
+        break;
+    }
+		printPrompt();
+  }
+}
+
+public class ScratchDBMSParser
+{
+  public static void main(String args[]) throws ParseException
+  {
+    ScratchDBMSParser parser = new ScratchDBMSParser(System.in);
+		MessagePrinter.printPrompt();
+
+    while (true)
+    {
+      try
+      {
+        parser.command();
+      }
+      catch (Exception e)
+      {
+				MessagePrinter.printMessage(Message.SYNTAX_ERROR);
+        ScratchDBMSParser.ReInit(System.in);
+      }
+    }
+  }
+}
+
+PARSER_END(ScratchDBMSParser)
+
+SKIP : { " " | "\r" | "\t" | "\n" }
+
+TOKEN : /* Keywords */
+{
+  < EXIT : "exit" >
+| < INT : "int" >
+| < CHAR : "char" >
+| < DATE : "date" >
+| < CREATE_TABLE : "create table" >
+| < NOT_NULL : "not null" >
+| < NULL : "null" >
+| < PRIMARY_KEY : "primary key" >
+| < FOREIGN_KEY : "foreign key" >
+| < REFERENCES : "references" >
+| < DROP_TABLE : "drop table" >
+| < DESC : "desc">
+| < SHOW_TABLES : "show tables" >
+| < SELECT : "select" >
+| < FROM : "from" >
+| < AS : "as" >
+| < WHERE : "where" >
+| < OR : "or" >
+| < AND : "and" >
+| < NOT : "not" >
+| < IS_NULL : "is null" >
+| < IS_NOT_NULL : "is not null" >
+| < INSERT_INTO : "insert into" >
+| < VALUES : "values" >
+| < DELETE_FROM : "delete from" >
+}
+
+TOKEN :
+{
+	/* ordered properly according to precedence */
+  < SEMICOLON : ";" >
+| < LEFT_PAREN : "(" >
+| < RIGHT_PAREN : ")" >
+| < COMMA : "," >
+| < PERIOD : "." >
+| < UNDERSCORE : "_" >
+| < ASTERISK : "*" >
+| < SIGN : "+" | "-" >
+| < COMP_OP : "<" | ">" | "=" | ">=" | "<=" | "!=" >
+| < LEGAL_IDENT : < ALPHABET > ( < ALPHABET > | < UNDERSCORE > )* >
+| < INT_VALUE : (< SIGN >)? (< DIGIT >)+ >
+| < DATE_VALUE : < DIGIT >< DIGIT >< DIGIT >< DIGIT > "-" < DIGIT >< DIGIT > "-" < DIGIT >< DIGIT > >
+| < CHAR_STRING : < QUOTE > (< NON_QUOTE_CHAR >)* < QUOTE > >
+| < NON_QUOTE_CHAR : < DIGIT > | < ALPHABET > | < NON_QUOTE_SPECIAL_CHAR > | " " >
+| < DIGIT : [ "0"-"9" ] >
+| < ALPHABET : [ "A"-"Z", "a"-"z" ] >
+| < NON_QUOTE_SPECIAL_CHAR : "!" | "@" | "#" | "$" | "%" | "^" | "&" | "*" >
+| < QUOTE : "\'" >
+}
+
+void command() :
+{}
+{
+  queryList()
+| (
+    < EXIT >
+    < SEMICOLON >
+    {
+      System.exit(0);
+    }
+  )
+}
+
+void queryList() :
+{
+  Message q;
+}
+{
+  (
+    q = query()
+    < SEMICOLON >
+    {
+      MessagePrinter.printMessage(q);
+    }
+  )+
+}
+
+Message query() :
+{
+  Message q;
+}
+{
+(
+  (
+    createTableQuery()
+    {
+        q = Message.CREATE_TABLE;
+    }
+  )
+| (
+    dropTableQuery()
+    {
+        q = Message.DROP_TABLE;
+    }
+  )
+| (
+    descQuery()
+    {
+        q = Message.DESC;
+    }
+  )
+| (
+    selectQuery()
+    {
+        q = Message.SELECT;
+    }
+  )
+| (
+    insertQuery()
+    {
+        q = Message.INSERT;
+    }
+  )
+| (
+    deleteQuery()
+    {
+        q = Message.DELETE;
+    }
+   )
+| (
+    showTablesQuery()
+    {
+        q = Message.SHOW_TABLES;
+    }
+   )
+)
+  (
+    {
+      return q;
+    }
+  )
+}
+
+/* create table statement */
+void createTableQuery() :
+{}
+{
+  < CREATE_TABLE >
+	< LEGAL_IDENT >
+  tableElementList()
+}
+
+void tableElementList() :
+{}
+{
+  < LEFT_PAREN >
+  tableElement()
+  (
+    < COMMA >
+    tableElement()
+  )*
+  < RIGHT_PAREN >
+}
+
+void tableElement() :
+{
+}
+{
+  columnDefinition()
+| tableConstraintDefinition()
+}
+
+void columnDefinition() :
+{}
+{
+	< LEGAL_IDENT >
+  dataType()
+  (
+    < NOT_NULL >
+  )?
+}
+
+void tableConstraintDefinition() :
+{}
+{
+  primaryKeyConstraint()
+| referentialConstraint()
+}
+
+void primaryKeyConstraint() :
+{}
+{
+  < PRIMARY_KEY >
+  columnNameList()
+}
+
+void referentialConstraint() :
+{}
+{
+  < FOREIGN_KEY >
+  columnNameList()
+  < REFERENCES >
+	< LEGAL_IDENT >
+  columnNameList()
+}
+
+void columnNameList() :
+{}
+{
+  < LEFT_PAREN >
+	< LEGAL_IDENT >
+  (
+    < COMMA >
+		< LEGAL_IDENT >
+  )*
+  < RIGHT_PAREN >
+}
+
+void dataType() :
+{}
+{
+  < INT >
+| (
+    < CHAR >
+    < LEFT_PAREN >
+		< INT_VALUE >
+    < RIGHT_PAREN >
+  )
+| < DATE >
+}
+
+/* drop table statement */
+void dropTableQuery() :
+{}
+{
+    < DROP_TABLE >
+		< LEGAL_IDENT >
+}
+
+/* desc statement */
+void descQuery() :
+{}
+{
+    < DESC >
+		< LEGAL_IDENT >
+}
+
+/* show tables statement */
+void showTablesQuery() :
+{}
+{
+    < SHOW_TABLES >
+}
+
+/* select statement */
+void selectQuery() :
+{}
+{
+    < SELECT >
+    selectList()
+    tableExpression()
+}
+
+void selectList() :
+{}
+{
+    < ASTERISK >
+|   selectedColumn()
+    ( < COMMA > selectedColumn() )*
+}
+
+void selectedColumn() :
+{}
+{
+		tableColumn()
+    ( < AS > < LEGAL_IDENT > )?
+}
+
+void tableExpression() :
+{}
+{
+    fromClause()
+    ( whereClause() )?
+}
+
+void fromClause() :
+{}
+{
+    < FROM > tableReferenceList()
+}
+
+void tableReferenceList() :
+{}
+{
+    referredTable()
+    ( < COMMA > referredTable() )*
+}
+
+void referredTable() :
+{}
+{
+		< LEGAL_IDENT >
+    ( < AS > < LEGAL_IDENT > )?
+}
+
+void whereClause() :
+{}
+{
+    < WHERE > booleanValueExpression()
+}
+
+void booleanValueExpression() :
+{}
+{
+	/* eliminate left recursion */
+    booleanTerm() ( < OR > booleanTerm() )*
+}
+
+void booleanTerm() :
+{}
+{
+	/* eliminate left recursion */
+    booleanFactor() ( < AND > booleanFactor() )*
+}
+
+void booleanFactor() :
+{}
+{
+    ( < NOT > )?
+    booleanTest()
+}
+
+void booleanTest() :
+{}
+{
+    predicate()
+  | parenthesizedBooleanExpression()
+}
+
+void parenthesizedBooleanExpression() :
+{}
+{
+    < LEFT_PAREN > booleanValueExpression() < RIGHT_PAREN >
+}
+
+void predicate() :
+{}
+{
+	/* revised to remove lookahead */
+	identifierPredicate() | constantPredicate()
+}
+
+void identifierPredicate() :
+{}
+{
+	tableColumn()
+	( ( < COMP_OP > compOperand() )
+	| nullOperation() ) 
+}
+
+void constantPredicate() :
+{}
+{
+	comparableValue()
+	< COMP_OP >
+	compOperand()
+}
+
+/*
+void comparisonPredicate() :
+ {}
+ {
+     compOperand()
+     < COMP_OP >
+     compOperand()
+ }
+*/
+
+void compOperand() :
+{}
+{
+    comparableValue()
+  | tableColumn()
+}
+
+void comparableValue() :
+{}
+{
+    < INT_VALUE > | < CHAR_STRING > | < DATE_VALUE >
+}
+
+/*
+void nullPredicate() :
+{}
+{
+		tableColumn()
+    nullOperation()
+}
+*/
+
+void nullOperation() :
+{}
+{
+    < IS_NULL > | < IS_NOT_NULL >
+}
+
+/* insert statement */
+void insertQuery() :
+{}
+{
+    < INSERT_INTO >
+		< LEGAL_IDENT >
+    insertColumnsAndSource()
+}
+
+void insertColumnsAndSource() :
+{}
+{
+    ( columnNameList() )?
+    valueList()
+}
+
+void valueList() :
+{}
+{
+    < VALUES >
+    < LEFT_PAREN >
+    value()
+    ( < COMMA > value() )*
+    < RIGHT_PAREN >
+}
+
+void value() :
+{}
+{
+    < NULL > | comparableValue()
+}
+
+/* delete statement */
+void deleteQuery() :
+{}
+{
+    < DELETE_FROM > < LEGAL_IDENT >
+    ( whereClause() )?
+}
+
+void tableColumn() :
+{}
+{
+	< LEGAL_IDENT >
+	( < PERIOD > < LEGAL_IDENT > )?
+}
