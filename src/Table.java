@@ -41,18 +41,27 @@ public class Table {
 
     public boolean setPrimaryKey(ArrayList<String> p) {
         if (!primaryKey.isEmpty()) {
-            // Duplicate primary key def error
+            MessagePrinter.printMessage(
+                    new Message(MessageName.DUPLICATE_PRIMARY_KEY_DEF_ERROR));
             return false;
         }
 
         Iterator<String> it = p.iterator();
+        ArrayList<Attribute> nAttrList = new ArrayList<>();
         while (it.hasNext()) {
             String n = it.next();
             Attribute nAttr = findAttribute(n);
             if (nAttr == null) {
-                //Non-existing column def error(#colname)
+                MessagePrinter.printMessage(
+                        new Message(MessageName.NON_EXISTING_COLUMN_DEF_ERROR, n));
                 return false;
             }
+            nAttrList.add(nAttr);
+        }
+
+        Iterator<Attribute> it2 = nAttrList.iterator();
+        while (it2.hasNext()) {
+            Attribute nAttr = it2.next();
             nAttr.setPrimaryKey();
             nAttr.setNotNull();
             primaryKey.add(nAttr);
@@ -76,7 +85,8 @@ public class Table {
 
     public boolean addAttribute(Attribute attr) {
         if (checkDuplicate(attr.getAttributeName())) {
-            // Duplicate column def error
+            MessagePrinter.printMessage(
+                    new Message(MessageName.DUPLICATE_COLUMN_DEF_ERROR));
             return false;
         }
         attrList.add(attr);
@@ -90,14 +100,16 @@ public class Table {
     public boolean setForiegnKey(ArrayList<String> foreignKey,
                                  Table table, ArrayList<String> reference) {
         if (foreignKey.size() != reference.size()) {
-            // Reference Type Error
+            MessagePrinter.printMessage(
+                    new Message(MessageName.REFERENCE_TYPE_ERROR));
             return false;
         }
 
         ArrayList<Attribute> prime = table.getPrimaryKey();
         ArrayList<Attribute> aAttrList = new ArrayList<>();
         if (prime.size() != reference.size()) {
-            //Reference non primary key error
+            MessagePrinter.printMessage(
+                    new Message(MessageName.REFERENCE_NON_PRIMARY_KEY_ERROR));
             return false;
         }
         Iterator<String> itForeign = foreignKey.iterator();
@@ -106,24 +118,28 @@ public class Table {
             String a = itForeign.next();
             Attribute aAttr = findAttribute(a);
             if (aAttr == null) {
-                // Non existing column def error(#colname)
+                MessagePrinter.printMessage(
+                        new Message(MessageName.NON_EXISTING_COLUMN_DEF_ERROR, a));
                 return false;
             }
             aAttrList.add(aAttr);
             String b = itReference.next();
             Attribute bAttr = table.findAttribute(b);
             if (bAttr == null) {
-                // Reference column existence error
+                MessagePrinter.printMessage(
+                        new Message(MessageName.REFERENCE_COLUMN_EXISTENCE_ERROR));
                 return false;
             }
 
             if (!prime.contains(bAttr)) {
-                // Reference non primary key error
+                MessagePrinter.printMessage(
+                        new Message(MessageName.REFERENCE_NON_PRIMARY_KEY_ERROR));
                 return false;
             }
 
             if (aAttr.getAttributeType().compareTo(bAttr.getAttributeType()) != 0) {
-                // Reference Type Error
+                MessagePrinter.printMessage(
+                        new Message(MessageName.REFERENCE_TYPE_ERROR));
                 return false;
             }
         }

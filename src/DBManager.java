@@ -23,7 +23,8 @@ public class DBManager {
 
     public boolean addTable(Table t) {
         if (findTable(t.getTableName()) != null) {
-            //Table existence error
+            MessagePrinter.printMessage(
+                    new Message(MessageName.TABLE_EXISTENCE_ERROR));
             return false;
         }
         tables.add(t);
@@ -33,12 +34,14 @@ public class DBManager {
     public boolean dropTable(String tablename) {
         Table t = findTable(tablename);
         if (t == null) {
-            // no such table
+            MessagePrinter.printMessage(
+                    new Message(MessageName.NO_SUCH_TABLE));
             return false;
         }
 
         if (t.getReferredList().size() != 0) {
-            // drop referenced table error (#table name)
+            MessagePrinter.printMessage(
+                    new Message(MessageName.DROP_REFERENCED_TABLE_ERROR));
             return false;
         }
 
@@ -67,7 +70,8 @@ public class DBManager {
     public boolean descTable(String tablename) {
         Table t = findTable(tablename);
         if (t == null) {
-            // no such table
+            MessagePrinter.printMessage(
+                    new Message(MessageName.NO_SUCH_TABLE));
             return false;
         }
 
@@ -78,7 +82,8 @@ public class DBManager {
     public boolean showTables() {
         Iterator<Table> it = tables.iterator();
         if (!it.hasNext()) {
-            // Show tables no table
+            MessagePrinter.printMessage(
+                    new Message(MessageName.SHOW_TABLES_NO_TABLE));
             return false;
         }
         System.out.println("----------------");

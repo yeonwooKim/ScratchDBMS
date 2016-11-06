@@ -7,51 +7,6 @@ options
 
 PARSER_BEGIN(ScratchDBMSParser)
 
-/* Message types */
-enum Message { SYNTAX_ERROR, CREATE_TABLE, DROP_TABLE, DESC, SELECT, INSERT, DELETE, SHOW_TABLES };
-
-/* Message printer is in charge of printing prompt and result messages */
-class MessagePrinter
-{
-	public static void printPrompt()
-	{
-    System.out.print("DB_2014-17184> ");
-	}
-  public static void printMessage(Message q)
-  {
-    switch(q)
-    {
-      case SYNTAX_ERROR:
-        System.out.println("Syntax error");
-        break;
-      case CREATE_TABLE:
-        System.out.println("\'CREATE TABLE\' requested");
-        break;
-      case DROP_TABLE:
-        System.out.println("\'DROP TABLE\' requested");
-        break;
-      case DESC:
-        System.out.println("\'DESC\' requested");
-        break;
-      case SELECT:
-        System.out.println("\'SELECT\' requested");
-        break;
-      case INSERT:
-        System.out.println("\'INSERT\' requested");
-        break;
-      case DELETE:
-        System.out.println("\'DELETE\' requested");
-        break;
-      case SHOW_TABLES:
-        System.out.println("\'SHOW TABLES\' requested");
-        break;
-      default:
-        System.out.println("Syntax error");
-        break;
-    }
-		printPrompt();
-  }
-}
 
 public class ScratchDBMSParser
 {

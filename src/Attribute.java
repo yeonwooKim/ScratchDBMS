@@ -3,23 +3,23 @@ import java.io.Serializable;
 /**
  * Created by yeonwoo_kim on 11/6/16.
  */
-enum Typename { INT, CHAR, DATE }
+enum TypeName { INT, CHAR, DATE }
 class Type implements Comparable<Type> {
     //TODO: char length error
-    private Typename typename;
-    private int charlength;
+    private TypeName typename;
+    private int lenChar;
 
-    public Type(Typename typename, int char_length) {
+    public Type(TypeName typename, int char_length) {
         this.typename = typename;
-        this.charlength = char_length;
+        this.lenChar = char_length;
     }
 
-    public Typename getTypename() {
+    public TypeName getTypename() {
         return typename;
     }
 
-    public int getCharlength() {
-        return charlength;
+    public int getLenChar() {
+        return lenChar;
     }
 
     public String toString() {
@@ -38,7 +38,7 @@ class Type implements Comparable<Type> {
                 break;
         }
         if (isChar)
-            ret = ret + "(" + Integer.toString(charlength) + ")";
+            ret = ret + "(" + Integer.toString(lenChar) + ")";
         return ret;
     }
 
@@ -46,7 +46,7 @@ class Type implements Comparable<Type> {
     @Override
     public int compareTo(Type o) {
         if (o.getTypename() == typename &&
-                o.getCharlength() == charlength)
+                o.getLenChar() == lenChar)
             return 0;
         return -1;
     }
