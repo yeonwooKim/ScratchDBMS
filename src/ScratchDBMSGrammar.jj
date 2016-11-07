@@ -7,6 +7,7 @@ options
 
 PARSER_BEGIN(ScratchDBMSParser)
 
+import java.util.ArrayList;
 
 	public class ScratchDBMSParser
 {
@@ -160,15 +161,17 @@ Message query() :
 /* create table statement */
 Message createTableQuery() :
 {
+    Token tok;
 	String tablename;
 	Table t;
 	Message m;
 }
 {
 	< CREATE_TABLE >
-		tablename = < LEGAL_IDENT >
+		tok = < LEGAL_IDENT >
 		{
-			t = DBManager.getManager().findTable(tablename);
+		    tablename = tok.toString();
+			t = DBManager.getDBManager().findTable(tablename);
 			if (t != null)
 				return new Message(MessageName.TABLE_EXISTENCE_ERROR);
 			t = new Table(tablename);
@@ -177,13 +180,15 @@ Message createTableQuery() :
 	{
 	    if (m != null)
 	        return m;
-	    DBManager.getManager().addTable(t);
-	    return new Message(MessageName.CREATE_TABLE_SUCCESS);
+	    DBManager.getDBManager().addTable(t);
+	    return new Message(MessageName.CREATE_TABLE_SUCCESS, tablename);
 	}
 }
 
 Message tableElementList(Table t) :
-{}
+{
+    Message m;
+}
 {
 	< LEFT_PAREN >
 		m = tableElement(t)
@@ -200,6 +205,9 @@ Message tableElementList(Table t) :
 	 }
 	)*
 	< RIGHT_PAREN >
+	{
+	    return null;
+	}
 }
 
 Message tableElement(Table t) :
@@ -217,14 +225,16 @@ Message tableElement(Table t) :
 Message columnDefinition(Table t) :
 {
 	Type typ;
+	Token tok;
 	String columnname;
 	Attribute attr;
 	Message m;
 }
 {
-	columnname = < LEGAL_IDENT >
+	tok = < LEGAL_IDENT >
 		typ = dataType()
 		{
+		    columnname = tok.toString();
 		    if (!typ.isValid())
 		        return new Message(MessageName.CHAR_LENGTH_ERROR);
 			attr = new Attribute(typ, columnname);
@@ -232,7 +242,7 @@ Message columnDefinition(Table t) :
 	(
 	 < NOT_NULL >
 	 {
-	    attr.isNotNull();
+	    attr.setNotNull();
 	 }
 	)?
 	{
@@ -273,16 +283,18 @@ Message referentialConstraint(Table t) :
     ArrayList<String> arr1;
     ArrayList<String> arr2;
     Table foreign_table;
+    Token tok;
     String tablename;
 }
 {
 	< FOREIGN_KEY >
 		arr1 = columnNameList()
 		< REFERENCES >
-		tablename = < LEGAL_IDENT >
+		tok = < LEGAL_IDENT >
 		arr2 = columnNameList()
 		{
-		    foreign_table = DBManager.getManager().findTable(tablename);
+		    tablename = tok.toString();
+		    foreign_table = DBManager.getDBManager().findTable(tablename);
 		    if (foreign_table == null)
 		        return new Message(MessageName.REFERENCE_TABLE_EXISTENCE_ERROR);
 		    m = t.setForeignKey(arr1, foreign_table, arr2);
@@ -293,18 +305,21 @@ Message referentialConstraint(Table t) :
 ArrayList<String> columnNameList() :
 {
     ArrayList<String> arr = new ArrayList<String>();
+    Token tok;
     String s;
 }
 {
 	< LEFT_PAREN >
-		s = < LEGAL_IDENT >
+		tok = < LEGAL_IDENT >
 		{
+		    s = tok.toString();
 		    arr.add(s);
 		}
 		(
 		 < COMMA >
-		 s = < LEGAL_IDENT >
+		 tok = < LEGAL_IDENT >
 		 {
+		    s = tok.toString();
 		    arr.add(s);
 		 }
 		)*
@@ -317,43 +332,47 @@ ArrayList<String> columnNameList() :
 Type dataType() :
 {
     Type t;
+    Token tok;
     String intval;
 }
 {
 	(< INT >
 	{
 	    t = new Type(TypeName.INT, -1);
+	    return t;
 	})
 		| (
 				< CHAR >
 				< LEFT_PAREN >
-				intval = < INT_VALUE >
+				tok = < INT_VALUE >
 				< RIGHT_PAREN >
 				{
+				    intval = tok.toString();
 				    t = new Type(TypeName.CHAR, Integer.parseInt(intval));
+				    return t;
 				}
 			)
 		| (< DATE >
 		{
 		    t = new Type(TypeName.DATE, -1);
+		    return t;
 		})
-	{
-	    return t;
-	}
 
 }
 
 /* drop table statement */
 Message dropTableQuery() :
 {
+    Token tok;
 	String tablename;
 	Message m;
 }
 {
 	< DROP_TABLE >
-		tablename = < LEGAL_IDENT >
+		tok = < LEGAL_IDENT >
 		{
-			m = DBManager.getManager().dropTable(tablename);
+		    tablename = tok.toString();
+			m = DBManager.getDBManager().dropTable(tablename);
 			return m;
 		}
 }
@@ -361,28 +380,25 @@ Message dropTableQuery() :
 /* desc statement */
 Message descQuery() :
 {
-	String t;
-	Message m;
+    Token tok;
+	String tablename;
 }
 {
 	< DESC >
-		t = < LEGAL_IDENT >
+		tok = < LEGAL_IDENT >
 		{
-			m = DBManager.getManager().descTable(tablename);
-			return m;
+		    tablename = tok.toString();
+			return new Message(MessageName.DESC_TABLE, tablename);
 		}
 }
 
 /* show tables statement */
 Message showTablesQuery() :
-{
-	Message m;
-}
+{}
 {
 	< SHOW_TABLES >
 	{
-		m = DBManager.getManager().showTables();
-		return m;
+		return new Message(MessageName.SHOW_TABLES);
 	}
 }
 

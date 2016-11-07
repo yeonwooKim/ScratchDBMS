@@ -3,60 +3,6 @@ import java.io.Serializable;
 /**
  * Created by yeonwoo_kim on 11/6/16.
  */
-enum TypeName { INT, CHAR, DATE }
-class Type implements Comparable<Type> {
-    private TypeName typename;
-    private int lenChar;
-
-    public Type(TypeName typename, int char_length) {
-        this.typename = typename;
-        this.lenChar = char_length;
-    }
-
-    public TypeName getTypename() {
-        return typename;
-    }
-
-    public int getLenChar() {
-        return lenChar;
-    }
-
-    public boolean isValid() {
-        if (typename == TypeName.CHAR && lenChar <= 0)
-            return false;
-        else
-            return true;
-    }
-
-    public String toString() {
-        String ret = null;
-        boolean isChar = false;
-        switch (typename) {
-            case INT:
-                ret = "int";
-                break;
-            case CHAR:
-                ret = "char";
-                isChar = true;
-                break;
-            case DATE:
-                ret = "date";
-                break;
-        }
-        if (isChar)
-            ret = ret + "(" + Integer.toString(lenChar) + ")";
-        return ret;
-    }
-
-
-    @Override
-    public int compareTo(Type o) {
-        if (o.getTypename() == typename &&
-                o.getLenChar() == lenChar)
-            return 0;
-        return -1;
-    }
-}
 
 public class Attribute implements Serializable {
     private Type attrType;
@@ -68,6 +14,9 @@ public class Attribute implements Serializable {
     public Attribute(Type attrType, String attrName) {
         this.attrType = attrType;
         this.attrName = attrName.toLowerCase();
+        this.isNotNull = false;
+        this.isForeignKey = false;
+        this.isPrimaryKey = false;
     }
 
     public Type getAttributeType() {

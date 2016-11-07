@@ -91,7 +91,7 @@ public class Table {
         referredList.add(t);
     }
 
-    public Message setForiegnKey(ArrayList<String> foreignKey,
+    public Message setForeignKey(ArrayList<String> foreignKey,
                                  Table table, ArrayList<String> reference) {
         if (foreignKey.size() != reference.size()) {
             return new Message(MessageName.REFERENCE_TYPE_ERROR);

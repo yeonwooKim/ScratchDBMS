@@ -1,55 +1,3 @@
-/**
- * Created by yeonwoo_kim on 11/7/16.
- */
-/* Message printer is in charge of printing prompt and result messages */
-/* Message types */
-
-enum MessageName {
-    SYNTAX_ERROR,
-    CREATE_TABLE_SUCCESS, // table name
-    DUPLICATE_COLUMN_DEF_ERROR,
-    DUPLICATE_PRIMARY_KEY_DEF_ERROR,
-    REFERENCE_TYPE_ERROR,
-    REFERENCE_NON_PRIMARY_KEY_ERROR,
-    REFERENCE_COLUMN_EXISTENCE_ERROR,
-    REFERENCE_TABLE_EXISTENCE_ERROR,
-    NON_EXISTING_COLUMN_DEF_ERROR, // column name
-    TABLE_EXISTENCE_ERROR,
-    DROP_SUCCESS, // table name
-    DROP_REFERENCED_TABLE_ERROR, // table name
-    SHOW_TABLES_NO_TABLE,
-    NO_SUCH_TABLE,
-    CHAR_LENGTH_ERROR,
-    SELECT, INSERT, DELETE
-}
-
-class Message {
-    private MessageName messagename;
-    private String nameArg;
-
-    public Message(MessageName messagename) {
-        this.messagename = messagename;
-        nameArg = "";
-    }
-
-    public Message(MessageName messagename, String nameArg) {
-        this.messagename = messagename;
-        this.nameArg = nameArg;
-    }
-
-    public MessageName getMessagename() {
-        return messagename;
-    }
-
-    public String getNameArg() {
-        return nameArg;
-    }
-
-    public void setNameArg(String nameArg) {
-        this.nameArg = nameArg;
-    }
-}
-
 public class MessagePrinter
 {
     public static void printPrompt()
@@ -64,10 +12,9 @@ public class MessagePrinter
     }
     public static void printMessage(Message m)
     {
-        if (m == null)
-            return;
         MessageName q = m.getMessagename();
         String n = m.getNameArg();
+        Message m1;
         switch(q)
         {
             case SYNTAX_ERROR:
@@ -117,10 +64,20 @@ public class MessagePrinter
                 System.out.println("\'[" + n + "]\' is referenced by other table");
                 break;
 
+            case SHOW_TABLES:
+                m1 = DBManager.getDBManager().showTables();
+                if (m1 != null)
+                    printMessage(m1);
+                break;
             case SHOW_TABLES_NO_TABLE:
                 System.out.println("There is no table");
                 break;
 
+            case DESC_TABLE:
+                m1 = DBManager.getDBManager().descTable(m.getNameArg());
+                if (m1 != null)
+                    printMessage(m1);
+                break;
             case NO_SUCH_TABLE:
                 System.out.println("No such table");
                 break;
