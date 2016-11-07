@@ -5,10 +5,17 @@ import java.util.Iterator;
  * Created by yeonwoo_kim on 11/6/16.
  */
 public class DBManager {
-    ArrayList<Table> tables;
+    private static DBManager manager = null;
+    private ArrayList<Table> tables;
 
-    public DBManager() {
+    private DBManager() {
         tables = new ArrayList<>();
+    }
+
+    public static DBManager getDBManager() {
+        if (manager == null)
+            manager = new DBManager();
+        return manager;
     }
 
     public Table findTable(String tablename) {
@@ -21,32 +28,22 @@ public class DBManager {
         return null;
     }
 
-    public boolean addTable(Table t) {
-        if (findTable(t.getTableName()) != null) {
-            MessagePrinter.printMessage(
-                    new Message(MessageName.TABLE_EXISTENCE_ERROR));
-            return false;
-        }
+    public void addTable(Table t) {
         tables.add(t);
-        return true;
     }
 
-    public boolean dropTable(String tablename) {
+    public Message dropTable(String tablename) {
         Table t = findTable(tablename);
         if (t == null) {
-            MessagePrinter.printMessage(
-                    new Message(MessageName.NO_SUCH_TABLE));
-            return false;
+            return new Message(MessageName.NO_SUCH_TABLE);
         }
 
         if (t.getReferredList().size() != 0) {
-            MessagePrinter.printMessage(
-                    new Message(MessageName.DROP_REFERENCED_TABLE_ERROR));
-            return false;
+            return new Message(MessageName.DROP_REFERENCED_TABLE_ERROR);
         }
 
         tables.remove(t);
-        return true;
+        return new Message(MessageName.DROP_SUCCESS, tablename);
     }
 
     private static void desc(Table t) {
@@ -67,30 +64,26 @@ public class DBManager {
         }
         System.out.println("-------------------------------------------------");
     }
-    public boolean descTable(String tablename) {
+    public Message descTable(String tablename) {
         Table t = findTable(tablename);
         if (t == null) {
-            MessagePrinter.printMessage(
-                    new Message(MessageName.NO_SUCH_TABLE));
-            return false;
+            return new Message(MessageName.NO_SUCH_TABLE);
         }
 
         desc(t);
-        return true;
+        return null;
     }
 
-    public boolean showTables() {
+    public Message showTables() {
         Iterator<Table> it = tables.iterator();
         if (!it.hasNext()) {
-            MessagePrinter.printMessage(
-                    new Message(MessageName.SHOW_TABLES_NO_TABLE));
-            return false;
+            return new Message(MessageName.SHOW_TABLES_NO_TABLE);
         }
         System.out.println("----------------");
         while (it.hasNext()) {
             System.out.println(it.next().getTableName());
         }
         System.out.println("----------------");
-        return true;
+        return null;
     }
 }

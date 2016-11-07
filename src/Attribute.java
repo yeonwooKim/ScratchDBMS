@@ -5,7 +5,6 @@ import java.io.Serializable;
  */
 enum TypeName { INT, CHAR, DATE }
 class Type implements Comparable<Type> {
-    //TODO: char length error
     private TypeName typename;
     private int lenChar;
 
@@ -20,6 +19,13 @@ class Type implements Comparable<Type> {
 
     public int getLenChar() {
         return lenChar;
+    }
+
+    public boolean isValid() {
+        if (typename == TypeName.CHAR && lenChar <= 0)
+            return false;
+        else
+            return true;
     }
 
     public String toString() {

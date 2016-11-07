@@ -39,11 +39,9 @@ public class Table {
         return null;
     }
 
-    public boolean setPrimaryKey(ArrayList<String> p) {
+    public Message setPrimaryKey(ArrayList<String> p) {
         if (!primaryKey.isEmpty()) {
-            MessagePrinter.printMessage(
-                    new Message(MessageName.DUPLICATE_PRIMARY_KEY_DEF_ERROR));
-            return false;
+            return new Message(MessageName.DUPLICATE_PRIMARY_KEY_DEF_ERROR);
         }
 
         Iterator<String> it = p.iterator();
@@ -52,9 +50,7 @@ public class Table {
             String n = it.next();
             Attribute nAttr = findAttribute(n);
             if (nAttr == null) {
-                MessagePrinter.printMessage(
-                        new Message(MessageName.NON_EXISTING_COLUMN_DEF_ERROR, n));
-                return false;
+               return new Message(MessageName.NON_EXISTING_COLUMN_DEF_ERROR, n);
             }
             nAttrList.add(nAttr);
         }
@@ -66,7 +62,7 @@ public class Table {
             nAttr.setNotNull();
             primaryKey.add(nAttr);
         }
-        return true;
+        return null;
     }
 
     public String getTableName() {
@@ -83,34 +79,28 @@ public class Table {
         return false;
     }
 
-    public boolean addAttribute(Attribute attr) {
+    public Message addAttribute(Attribute attr) {
         if (checkDuplicate(attr.getAttributeName())) {
-            MessagePrinter.printMessage(
-                    new Message(MessageName.DUPLICATE_COLUMN_DEF_ERROR));
-            return false;
+            return new Message(MessageName.DUPLICATE_COLUMN_DEF_ERROR);
         }
         attrList.add(attr);
-        return true;
+        return null;
     }
 
     public void addReferred(Table t) {
         referredList.add(t);
     }
 
-    public boolean setForiegnKey(ArrayList<String> foreignKey,
+    public Message setForiegnKey(ArrayList<String> foreignKey,
                                  Table table, ArrayList<String> reference) {
         if (foreignKey.size() != reference.size()) {
-            MessagePrinter.printMessage(
-                    new Message(MessageName.REFERENCE_TYPE_ERROR));
-            return false;
+            return new Message(MessageName.REFERENCE_TYPE_ERROR);
         }
 
         ArrayList<Attribute> prime = table.getPrimaryKey();
         ArrayList<Attribute> aAttrList = new ArrayList<>();
         if (prime.size() != reference.size()) {
-            MessagePrinter.printMessage(
-                    new Message(MessageName.REFERENCE_NON_PRIMARY_KEY_ERROR));
-            return false;
+            return new Message(MessageName.REFERENCE_NON_PRIMARY_KEY_ERROR);
         }
         Iterator<String> itForeign = foreignKey.iterator();
         Iterator<String> itReference = reference.iterator();
@@ -118,29 +108,21 @@ public class Table {
             String a = itForeign.next();
             Attribute aAttr = findAttribute(a);
             if (aAttr == null) {
-                MessagePrinter.printMessage(
-                        new Message(MessageName.NON_EXISTING_COLUMN_DEF_ERROR, a));
-                return false;
+                return new Message(MessageName.NON_EXISTING_COLUMN_DEF_ERROR, a);
             }
             aAttrList.add(aAttr);
             String b = itReference.next();
             Attribute bAttr = table.findAttribute(b);
             if (bAttr == null) {
-                MessagePrinter.printMessage(
-                        new Message(MessageName.REFERENCE_COLUMN_EXISTENCE_ERROR));
-                return false;
+                return new Message(MessageName.REFERENCE_COLUMN_EXISTENCE_ERROR);
             }
 
             if (!prime.contains(bAttr)) {
-                MessagePrinter.printMessage(
-                        new Message(MessageName.REFERENCE_NON_PRIMARY_KEY_ERROR));
-                return false;
+                return new Message(MessageName.REFERENCE_NON_PRIMARY_KEY_ERROR);
             }
 
             if (aAttr.getAttributeType().compareTo(bAttr.getAttributeType()) != 0) {
-                MessagePrinter.printMessage(
-                        new Message(MessageName.REFERENCE_TYPE_ERROR));
-                return false;
+                return new Message(MessageName.REFERENCE_TYPE_ERROR);
             }
         }
 
@@ -149,7 +131,7 @@ public class Table {
         while (it.hasNext()) {
             it.next().setForeignKey();
         }
-        return true;
+        return null;
     }
 
 }

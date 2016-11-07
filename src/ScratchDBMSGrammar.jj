@@ -1,374 +1,480 @@
 options
 {
-  static = true;
-  DEBUG_PARSER = false;
-  IGNORE_CASE = true;
+	static = true;
+	DEBUG_PARSER = false;
+	IGNORE_CASE = true;
 }
 
 PARSER_BEGIN(ScratchDBMSParser)
 
 
-public class ScratchDBMSParser
+	public class ScratchDBMSParser
 {
-  public static void main(String args[]) throws ParseException
-  {
-    ScratchDBMSParser parser = new ScratchDBMSParser(System.in);
+	public static void main(String args[]) throws ParseException
+	{
+		ScratchDBMSParser parser = new ScratchDBMSParser(System.in);
 		MessagePrinter.printPrompt();
 
-    while (true)
-    {
-      try
-      {
-        parser.command();
-      }
-      catch (Exception e)
-      {
-				MessagePrinter.printMessage(Message.SYNTAX_ERROR);
-        ScratchDBMSParser.ReInit(System.in);
-      }
-    }
-  }
+		while (true)
+		{
+			try
+			{
+				parser.command();
+			}
+			catch (Exception e)
+			{
+				MessagePrinter.printMessage(new Message(MessageName.SYNTAX_ERROR));
+				ScratchDBMSParser.ReInit(System.in);
+			}
+		}
+	}
 }
 
 PARSER_END(ScratchDBMSParser)
 
-SKIP : { " " | "\r" | "\t" | "\n" }
+	SKIP : { " " | "\r" | "\t" | "\n" }
 
 TOKEN : /* Keywords */
 {
-  < EXIT : "exit" >
-| < INT : "int" >
-| < CHAR : "char" >
-| < DATE : "date" >
-| < CREATE_TABLE : "create table" >
-| < NOT_NULL : "not null" >
-| < NULL : "null" >
-| < PRIMARY_KEY : "primary key" >
-| < FOREIGN_KEY : "foreign key" >
-| < REFERENCES : "references" >
-| < DROP_TABLE : "drop table" >
-| < DESC : "desc">
-| < SHOW_TABLES : "show tables" >
-| < SELECT : "select" >
-| < FROM : "from" >
-| < AS : "as" >
-| < WHERE : "where" >
-| < OR : "or" >
-| < AND : "and" >
-| < NOT : "not" >
-| < IS_NULL : "is null" >
-| < IS_NOT_NULL : "is not null" >
-| < INSERT_INTO : "insert into" >
-| < VALUES : "values" >
-| < DELETE_FROM : "delete from" >
+	< EXIT : "exit" >
+		| < INT : "int" >
+		| < CHAR : "char" >
+		| < DATE : "date" >
+		| < CREATE_TABLE : "create table" >
+		| < NOT_NULL : "not null" >
+		| < NULL : "null" >
+		| < PRIMARY_KEY : "primary key" >
+		| < FOREIGN_KEY : "foreign key" >
+		| < REFERENCES : "references" >
+		| < DROP_TABLE : "drop table" >
+		| < DESC : "desc">
+		| < SHOW_TABLES : "show tables" >
+		| < SELECT : "select" >
+		| < FROM : "from" >
+		| < AS : "as" >
+		| < WHERE : "where" >
+		| < OR : "or" >
+		| < AND : "and" >
+		| < NOT : "not" >
+		| < IS_NULL : "is null" >
+		| < IS_NOT_NULL : "is not null" >
+		| < INSERT_INTO : "insert into" >
+		| < VALUES : "values" >
+		| < DELETE_FROM : "delete from" >
 }
 
 TOKEN :
 {
 	/* ordered properly according to precedence */
-  < SEMICOLON : ";" >
-| < LEFT_PAREN : "(" >
-| < RIGHT_PAREN : ")" >
-| < COMMA : "," >
-| < PERIOD : "." >
-| < UNDERSCORE : "_" >
-| < ASTERISK : "*" >
-| < SIGN : "+" | "-" >
-| < COMP_OP : "<" | ">" | "=" | ">=" | "<=" | "!=" >
-| < LEGAL_IDENT : < ALPHABET > ( < ALPHABET > | < UNDERSCORE > )* >
-| < INT_VALUE : (< SIGN >)? (< DIGIT >)+ >
-| < DATE_VALUE : < DIGIT >< DIGIT >< DIGIT >< DIGIT > "-" < DIGIT >< DIGIT > "-" < DIGIT >< DIGIT > >
-| < CHAR_STRING : < QUOTE > (< NON_QUOTE_CHAR >)* < QUOTE > >
-| < NON_QUOTE_CHAR : < DIGIT > | < ALPHABET > | < NON_QUOTE_SPECIAL_CHAR > | " " >
-| < DIGIT : [ "0"-"9" ] >
-| < ALPHABET : [ "A"-"Z", "a"-"z" ] >
-| < NON_QUOTE_SPECIAL_CHAR : "!" | "@" | "#" | "$" | "%" | "^" | "&" | "*" >
-| < QUOTE : "\'" >
+	< SEMICOLON : ";" >
+		| < LEFT_PAREN : "(" >
+		| < RIGHT_PAREN : ")" >
+		| < COMMA : "," >
+		| < PERIOD : "." >
+		| < UNDERSCORE : "_" >
+		| < ASTERISK : "*" >
+		| < SIGN : "+" | "-" >
+		| < COMP_OP : "<" | ">" | "=" | ">=" | "<=" | "!=" >
+		| < LEGAL_IDENT : < ALPHABET > ( < ALPHABET > | < UNDERSCORE > )* >
+		| < INT_VALUE : (< SIGN >)? (< DIGIT >)+ >
+		| < DATE_VALUE : < DIGIT >< DIGIT >< DIGIT >< DIGIT > "-" < DIGIT >< DIGIT > "-" < DIGIT >< DIGIT > >
+		| < CHAR_STRING : < QUOTE > (< NON_QUOTE_CHAR >)* < QUOTE > >
+		| < NON_QUOTE_CHAR : < DIGIT > | < ALPHABET > | < NON_QUOTE_SPECIAL_CHAR > | " " >
+		| < DIGIT : [ "0"-"9" ] >
+		| < ALPHABET : [ "A"-"Z", "a"-"z" ] >
+		| < NON_QUOTE_SPECIAL_CHAR : "!" | "@" | "#" | "$" | "%" | "^" | "&" | "*" >
+		| < QUOTE : "\'" >
 }
 
 void command() :
 {}
 {
-  queryList()
-| (
-    < EXIT >
-    < SEMICOLON >
-    {
-      System.exit(0);
-    }
-  )
+	queryList()
+		| (
+				< EXIT >
+				< SEMICOLON >
+				{
+				System.exit(0);
+				}
+			)
 }
 
 void queryList() :
 {
-  Message q;
+	Message m;
 }
 {
-  (
-    q = query()
-    < SEMICOLON >
-    {
-      MessagePrinter.printMessage(q);
-    }
-  )+
+	(
+	 m = query()
+	 < SEMICOLON >
+	 {
+	 MessagePrinter.printMessage(m);
+	 }
+	)+
 }
 
 Message query() :
 {
-  Message q;
+	Message m;
 }
 {
-(
-  (
-    createTableQuery()
-    {
-        q = Message.CREATE_TABLE;
-    }
-  )
-| (
-    dropTableQuery()
-    {
-        q = Message.DROP_TABLE;
-    }
-  )
-| (
-    descQuery()
-    {
-        q = Message.DESC;
-    }
-  )
-| (
-    selectQuery()
-    {
-        q = Message.SELECT;
-    }
-  )
-| (
-    insertQuery()
-    {
-        q = Message.INSERT;
-    }
-  )
-| (
-    deleteQuery()
-    {
-        q = Message.DELETE;
-    }
-   )
-| (
-    showTablesQuery()
-    {
-        q = Message.SHOW_TABLES;
-    }
-   )
-)
-  (
-    {
-      return q;
-    }
-  )
+	(
+	 (
+		m = createTableQuery()
+	 )
+	 | (
+		 m = dropTableQuery()
+		 )
+	 | (
+		 m = descQuery()
+		 )
+	 | (
+		 selectQuery()
+		 {
+		 m = new Message(MessageName.SELECT);
+		 }
+		 )
+	 | (
+		 insertQuery()
+		 {
+		 m = new Message(MessageName.INSERT);
+		 }
+		 )
+	 | (
+			 deleteQuery()
+			 {
+			 m = new Message(MessageName.DELETE);
+			 }
+		 )
+	 | (
+			 m = showTablesQuery()
+		 )
+	 )
+	 (
+		{
+		return m;
+		}
+	 )
 }
 
 /* create table statement */
-void createTableQuery() :
-{}
+Message createTableQuery() :
 {
-  < CREATE_TABLE >
-	< LEGAL_IDENT >
-  tableElementList()
+	String tablename;
+	Table t;
+	Message m;
+}
+{
+	< CREATE_TABLE >
+		tablename = < LEGAL_IDENT >
+		{
+			t = DBManager.getManager().findTable(tablename);
+			if (t != null)
+				return new Message(MessageName.TABLE_EXISTENCE_ERROR);
+			t = new Table(tablename);
+		}
+	m = tableElementList(t)
+	{
+	    if (m != null)
+	        return m;
+	    DBManager.getManager().addTable(t);
+	    return new Message(MessageName.CREATE_TABLE_SUCCESS);
+	}
 }
 
-void tableElementList() :
+Message tableElementList(Table t) :
 {}
 {
-  < LEFT_PAREN >
-  tableElement()
-  (
-    < COMMA >
-    tableElement()
-  )*
-  < RIGHT_PAREN >
+	< LEFT_PAREN >
+		m = tableElement(t)
+		{
+			if (m != null)
+				return m;
+		}
+	(
+	 < COMMA >
+	 m = tableElement(t)
+	 {
+	    if (m != null)
+	        return m;
+	 }
+	)*
+	< RIGHT_PAREN >
 }
 
-void tableElement() :
+Message tableElement(Table t) :
 {
+    Message m;
 }
 {
-  columnDefinition()
-| tableConstraintDefinition()
-}
-
-void columnDefinition() :
-{}
-{
-	< LEGAL_IDENT >
-  dataType()
-  (
-    < NOT_NULL >
-  )?
+	((m = columnDefinition(t))
+		| (m = tableConstraintDefinition(t)))
+	{
+	    return m;
+	}
 }
 
-void tableConstraintDefinition() :
-{}
+Message columnDefinition(Table t) :
 {
-  primaryKeyConstraint()
-| referentialConstraint()
+	Type typ;
+	String columnname;
+	Attribute attr;
+	Message m;
+}
+{
+	columnname = < LEGAL_IDENT >
+		typ = dataType()
+		{
+		    if (!typ.isValid())
+		        return new Message(MessageName.CHAR_LENGTH_ERROR);
+			attr = new Attribute(typ, columnname);
+		}
+	(
+	 < NOT_NULL >
+	 {
+	    attr.isNotNull();
+	 }
+	)?
+	{
+		m = t.addAttribute(attr);
+		return m;
+	}
 }
 
-void primaryKeyConstraint() :
-{}
+Message tableConstraintDefinition(Table t) :
 {
-  < PRIMARY_KEY >
-  columnNameList()
+    Message m;
+}
+{
+	((m = primaryKeyConstraint(t))
+		| (m = referentialConstraint(t)))
+	{
+	    return m;
+	}
 }
 
-void referentialConstraint() :
-{}
+Message primaryKeyConstraint(Table t) :
 {
-  < FOREIGN_KEY >
-  columnNameList()
-  < REFERENCES >
-	< LEGAL_IDENT >
-  columnNameList()
+    Message m;
+    ArrayList<String> arr;
+}
+{
+	< PRIMARY_KEY >
+	     arr = columnNameList()
+	{
+	    m = t.setPrimaryKey(arr);
+	    return m;
+	}
 }
 
-void columnNameList() :
-{}
+Message referentialConstraint(Table t) :
 {
-  < LEFT_PAREN >
-	< LEGAL_IDENT >
-  (
-    < COMMA >
-		< LEGAL_IDENT >
-  )*
-  < RIGHT_PAREN >
+    Message m;
+    ArrayList<String> arr1;
+    ArrayList<String> arr2;
+    Table foreign_table;
+    String tablename;
+}
+{
+	< FOREIGN_KEY >
+		arr1 = columnNameList()
+		< REFERENCES >
+		tablename = < LEGAL_IDENT >
+		arr2 = columnNameList()
+		{
+		    foreign_table = DBManager.getManager().findTable(tablename);
+		    if (foreign_table == null)
+		        return new Message(MessageName.REFERENCE_TABLE_EXISTENCE_ERROR);
+		    m = t.setForeignKey(arr1, foreign_table, arr2);
+		    return m;
+		}
 }
 
-void dataType() :
-{}
+ArrayList<String> columnNameList() :
 {
-  < INT >
-| (
-    < CHAR >
-    < LEFT_PAREN >
-		< INT_VALUE >
-    < RIGHT_PAREN >
-  )
-| < DATE >
+    ArrayList<String> arr = new ArrayList<String>();
+    String s;
+}
+{
+	< LEFT_PAREN >
+		s = < LEGAL_IDENT >
+		{
+		    arr.add(s);
+		}
+		(
+		 < COMMA >
+		 s = < LEGAL_IDENT >
+		 {
+		    arr.add(s);
+		 }
+		)*
+		< RIGHT_PAREN >
+	{
+	    return arr;
+	}
+}
+
+Type dataType() :
+{
+    Type t;
+    String intval;
+}
+{
+	(< INT >
+	{
+	    t = new Type(TypeName.INT, -1);
+	})
+		| (
+				< CHAR >
+				< LEFT_PAREN >
+				intval = < INT_VALUE >
+				< RIGHT_PAREN >
+				{
+				    t = new Type(TypeName.CHAR, Integer.parseInt(intval));
+				}
+			)
+		| (< DATE >
+		{
+		    t = new Type(TypeName.DATE, -1);
+		})
+	{
+	    return t;
+	}
+
 }
 
 /* drop table statement */
-void dropTableQuery() :
-{}
+Message dropTableQuery() :
 {
-    < DROP_TABLE >
-		< LEGAL_IDENT >
+	String tablename;
+	Message m;
+}
+{
+	< DROP_TABLE >
+		tablename = < LEGAL_IDENT >
+		{
+			m = DBManager.getManager().dropTable(tablename);
+			return m;
+		}
 }
 
 /* desc statement */
-void descQuery() :
-{}
+Message descQuery() :
 {
-    < DESC >
-		< LEGAL_IDENT >
+	String t;
+	Message m;
+}
+{
+	< DESC >
+		t = < LEGAL_IDENT >
+		{
+			m = DBManager.getManager().descTable(tablename);
+			return m;
+		}
 }
 
 /* show tables statement */
-void showTablesQuery() :
-{}
+Message showTablesQuery() :
 {
-    < SHOW_TABLES >
+	Message m;
+}
+{
+	< SHOW_TABLES >
+	{
+		m = DBManager.getManager().showTables();
+		return m;
+	}
 }
 
 /* select statement */
 void selectQuery() :
 {}
 {
-    < SELECT >
-    selectList()
-    tableExpression()
+	< SELECT >
+		selectList()
+		tableExpression()
 }
 
 void selectList() :
 {}
 {
-    < ASTERISK >
-|   selectedColumn()
-    ( < COMMA > selectedColumn() )*
+	< ASTERISK >
+		|   selectedColumn()
+		( < COMMA > selectedColumn() )*
 }
 
 void selectedColumn() :
 {}
 {
-		tableColumn()
-    ( < AS > < LEGAL_IDENT > )?
+	tableColumn()
+		( < AS > < LEGAL_IDENT > )?
 }
 
 void tableExpression() :
 {}
 {
-    fromClause()
-    ( whereClause() )?
+	fromClause()
+		( whereClause() )?
 }
 
 void fromClause() :
 {}
 {
-    < FROM > tableReferenceList()
+	< FROM > tableReferenceList()
 }
 
 void tableReferenceList() :
 {}
 {
-    referredTable()
-    ( < COMMA > referredTable() )*
+	referredTable()
+		( < COMMA > referredTable() )*
 }
 
 void referredTable() :
 {}
 {
-		< LEGAL_IDENT >
-    ( < AS > < LEGAL_IDENT > )?
+	< LEGAL_IDENT >
+		( < AS > < LEGAL_IDENT > )?
 }
 
 void whereClause() :
 {}
 {
-    < WHERE > booleanValueExpression()
+	< WHERE > booleanValueExpression()
 }
 
 void booleanValueExpression() :
 {}
 {
 	/* eliminate left recursion */
-    booleanTerm() ( < OR > booleanTerm() )*
+	booleanTerm() ( < OR > booleanTerm() )*
 }
 
 void booleanTerm() :
 {}
 {
 	/* eliminate left recursion */
-    booleanFactor() ( < AND > booleanFactor() )*
+	booleanFactor() ( < AND > booleanFactor() )*
 }
 
 void booleanFactor() :
 {}
 {
-    ( < NOT > )?
-    booleanTest()
+	( < NOT > )?
+		booleanTest()
 }
 
 void booleanTest() :
 {}
 {
-    predicate()
-  | parenthesizedBooleanExpression()
+	predicate()
+		| parenthesizedBooleanExpression()
 }
 
 void parenthesizedBooleanExpression() :
 {}
 {
-    < LEFT_PAREN > booleanValueExpression() < RIGHT_PAREN >
+	< LEFT_PAREN > booleanValueExpression() < RIGHT_PAREN >
 }
 
 void predicate() :
@@ -382,99 +488,80 @@ void identifierPredicate() :
 {}
 {
 	tableColumn()
-	( ( < COMP_OP > compOperand() )
-	| nullOperation() ) 
+		( ( < COMP_OP > compOperand() )
+			| nullOperation() ) 
 }
 
 void constantPredicate() :
 {}
 {
 	comparableValue()
-	< COMP_OP >
-	compOperand()
+		< COMP_OP >
+		compOperand()
 }
-
-/*
-void comparisonPredicate() :
- {}
- {
-     compOperand()
-     < COMP_OP >
-     compOperand()
- }
-*/
 
 void compOperand() :
 {}
 {
-    comparableValue()
-  | tableColumn()
+	comparableValue()
+		| tableColumn()
 }
 
 void comparableValue() :
 {}
 {
-    < INT_VALUE > | < CHAR_STRING > | < DATE_VALUE >
+	< INT_VALUE > | < CHAR_STRING > | < DATE_VALUE >
 }
-
-/*
-void nullPredicate() :
-{}
-{
-		tableColumn()
-    nullOperation()
-}
-*/
 
 void nullOperation() :
 {}
 {
-    < IS_NULL > | < IS_NOT_NULL >
+	< IS_NULL > | < IS_NOT_NULL >
 }
 
 /* insert statement */
 void insertQuery() :
 {}
 {
-    < INSERT_INTO >
+	< INSERT_INTO >
 		< LEGAL_IDENT >
-    insertColumnsAndSource()
+		insertColumnsAndSource()
 }
 
 void insertColumnsAndSource() :
 {}
 {
-    ( columnNameList() )?
-    valueList()
+	( columnNameList() )?
+		valueList()
 }
 
 void valueList() :
 {}
 {
-    < VALUES >
-    < LEFT_PAREN >
-    value()
-    ( < COMMA > value() )*
-    < RIGHT_PAREN >
+	< VALUES >
+		< LEFT_PAREN >
+		value()
+		( < COMMA > value() )*
+		< RIGHT_PAREN >
 }
 
 void value() :
 {}
 {
-    < NULL > | comparableValue()
+	< NULL > | comparableValue()
 }
 
 /* delete statement */
 void deleteQuery() :
 {}
 {
-    < DELETE_FROM > < LEGAL_IDENT >
-    ( whereClause() )?
+	< DELETE_FROM > < LEGAL_IDENT >
+		( whereClause() )?
 }
 
 void tableColumn() :
 {}
 {
 	< LEGAL_IDENT >
-	( < PERIOD > < LEGAL_IDENT > )?
+		( < PERIOD > < LEGAL_IDENT > )?
 }
