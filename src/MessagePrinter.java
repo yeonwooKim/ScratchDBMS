@@ -66,8 +66,10 @@ public class MessagePrinter
 
             case SHOW_TABLES:
                 m1 = DBManager.getDBManager().showTables();
-                if (m1 != null)
+                if (m1 != null) {
                     printMessage(m1);
+                    return;
+                }
                 break;
             case SHOW_TABLES_NO_TABLE:
                 System.out.println("There is no table");
@@ -75,8 +77,10 @@ public class MessagePrinter
 
             case DESC_TABLE:
                 m1 = DBManager.getDBManager().descTable(m.getNameArg());
-                if (m1 != null)
+                if (m1 != null) {
                     printMessage(m1);
+                    return;
+                }
                 break;
             case NO_SUCH_TABLE:
                 System.out.println("No such table");

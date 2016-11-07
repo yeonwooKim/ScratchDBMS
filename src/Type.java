@@ -1,4 +1,6 @@
-public class Type implements Comparable<Type> {
+import java.io.Serializable;
+
+public class Type implements Comparable<Type>, Serializable {
     private TypeName typename;
     private int lenChar;
 

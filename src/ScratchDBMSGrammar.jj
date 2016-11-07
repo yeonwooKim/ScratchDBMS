@@ -13,6 +13,7 @@ import java.util.ArrayList;
 {
 	public static void main(String args[]) throws ParseException
 	{
+	    Berkeley.getBerkeley().open();
 		ScratchDBMSParser parser = new ScratchDBMSParser(System.in);
 		MessagePrinter.printPrompt();
 
@@ -95,6 +96,7 @@ void command() :
 				< EXIT >
 				< SEMICOLON >
 				{
+				Berkeley.getBerkeley().close();
 				System.exit(0);
 				}
 			)
@@ -122,9 +124,17 @@ Message query() :
 	(
 	 (
 		m = createTableQuery()
+		{
+		    if (m.getMessagename() == MessageName.CREATE_TABLE_SUCCESS)
+		        Berkeley.getBerkeley().updateManager();
+		}
 	 )
 	 | (
 		 m = dropTableQuery()
+		 {
+		    if (m.getMessagename() == MessageName.DROP_SUCCESS)
+            		        Berkeley.getBerkeley().updateManager();
+		 }
 		 )
 	 | (
 		 m = descQuery()

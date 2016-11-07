@@ -5,6 +5,7 @@ import java.util.ArrayList;
         public class ScratchDBMSParser implements ScratchDBMSParserConstants {
         public static void main(String args[]) throws ParseException
         {
+            Berkeley.getBerkeley().open();
                 ScratchDBMSParser parser = new ScratchDBMSParser(System.in);
                 MessagePrinter.printPrompt();
 
@@ -37,7 +38,8 @@ import java.util.ArrayList;
     case EXIT:{
       jj_consume_token(EXIT);
       jj_consume_token(SEMICOLON);
-System.exit(0);
+Berkeley.getBerkeley().close();
+                                System.exit(0);
       break;
       }
     default:
@@ -75,10 +77,14 @@ MessagePrinter.printMessage(m);
     switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
     case CREATE_TABLE:{
       m = createTableQuery();
+if (m.getMessagename() == MessageName.CREATE_TABLE_SUCCESS)
+                        Berkeley.getBerkeley().updateManager();
       break;
       }
     case DROP_TABLE:{
       m = dropTableQuery();
+if (m.getMessagename() == MessageName.DROP_SUCCESS)
+                                Berkeley.getBerkeley().updateManager();
       break;
       }
     case DESC:{

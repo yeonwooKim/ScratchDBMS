@@ -1,10 +1,11 @@
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
 
 /**
  * Created by yeonwoo_kim on 11/6/16.
  */
-public class DBManager {
+public class DBManager implements Serializable {
     private static DBManager manager = null;
     private ArrayList<Table> tables;
 
@@ -16,6 +17,10 @@ public class DBManager {
         if (manager == null)
             manager = new DBManager();
         return manager;
+    }
+
+    public static void setDBManager(DBManager m) {
+        manager = m;
     }
 
     public Table findTable(String tablename) {

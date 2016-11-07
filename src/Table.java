@@ -1,10 +1,11 @@
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
 
 /**
  * Created by yeonwoo_kim on 11/6/16.
  */
-public class Table {
+public class Table implements Serializable {
     private ArrayList<Attribute> attrList;
     private ArrayList<Table> referredList;
     private ArrayList<Attribute> primaryKey;
