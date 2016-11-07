@@ -22,7 +22,7 @@ public class DBManager {
         Iterator<Table> it = tables.iterator();
         while (it.hasNext()) {
             Table n = it.next();
-            if (n.getTableName().compareToIgnoreCase(tablename) == 0)
+            if (n.getTableName().equalsIgnoreCase(tablename))
                 return n;
         }
         return null;
@@ -39,7 +39,7 @@ public class DBManager {
         }
 
         if (t.getReferredList().size() != 0) {
-            return new Message(MessageName.DROP_REFERENCED_TABLE_ERROR);
+            return new Message(MessageName.DROP_REFERENCED_TABLE_ERROR, tablename);
         }
 
         tables.remove(t);

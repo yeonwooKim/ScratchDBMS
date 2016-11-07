@@ -117,27 +117,29 @@ m = new Message(MessageName.DELETE);
   static final public Message createTableQuery() throws ParseException {Token tok;
         String tablename;
         Table t;
-        Message m;
+        Message m = null;
+        Message m1 = null;
     jj_consume_token(CREATE_TABLE);
     tok = jj_consume_token(LEGAL_IDENT);
 tablename = tok.toString();
                         t = DBManager.getDBManager().findTable(tablename);
                         if (t != null)
-                                {if ("" != null) return new Message(MessageName.TABLE_EXISTENCE_ERROR);}
+                            m = new Message(MessageName.TABLE_EXISTENCE_ERROR);
                         t = new Table(tablename);
-    m = tableElementList(t);
+    m1 = tableElementList(t);
 if (m != null)
                 {if ("" != null) return m;}
+            if (m1 != null)
+                {if ("" != null) return m1;}
             DBManager.getDBManager().addTable(t);
             {if ("" != null) return new Message(MessageName.CREATE_TABLE_SUCCESS, tablename);}
     throw new Error("Missing return statement in function");
   }
 
-  static final public Message tableElementList(Table t) throws ParseException {Message m;
+  static final public Message tableElementList(Table t) throws ParseException {Message m = null;
+    Message m1 = null;
     jj_consume_token(LEFT_PAREN);
     m = tableElement(t);
-if (m != null)
-                                {if ("" != null) return m;}
     label_2:
     while (true) {
       switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
@@ -150,16 +152,16 @@ if (m != null)
         break label_2;
       }
       jj_consume_token(COMMA);
-      m = tableElement(t);
-if (m != null)
-                {if ("" != null) return m;}
+      m1 = tableElement(t);
+if (m == null)
+                    m = m1;
     }
     jj_consume_token(RIGHT_PAREN);
-{if ("" != null) return null;}
+{if ("" != null) return m;}
     throw new Error("Missing return statement in function");
   }
 
-  static final public Message tableElement(Table t) throws ParseException {Message m;
+  static final public Message tableElement(Table t) throws ParseException {Message m = null;
     switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
     case LEGAL_IDENT:{
       m = columnDefinition(t);
@@ -183,12 +185,12 @@ if (m != null)
         Token tok;
         String columnname;
         Attribute attr;
-        Message m;
+        Message m = null;
     tok = jj_consume_token(LEGAL_IDENT);
     typ = dataType();
 columnname = tok.toString();
                     if (!typ.isValid())
-                        {if ("" != null) return new Message(MessageName.CHAR_LENGTH_ERROR);}
+                        m = new Message(MessageName.CHAR_LENGTH_ERROR);
                         attr = new Attribute(typ, columnname);
     switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
     case NOT_NULL:{
@@ -200,12 +202,13 @@ attr.setNotNull();
       jj_la1[5] = jj_gen;
       ;
     }
-m = t.addAttribute(attr);
+if (m == null)
+                    m = t.addAttribute(attr);
                 {if ("" != null) return m;}
     throw new Error("Missing return statement in function");
   }
 
-  static final public Message tableConstraintDefinition(Table t) throws ParseException {Message m;
+  static final public Message tableConstraintDefinition(Table t) throws ParseException {Message m = null;
     switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
     case PRIMARY_KEY:{
       m = primaryKeyConstraint(t);
@@ -224,21 +227,22 @@ m = t.addAttribute(attr);
     throw new Error("Missing return statement in function");
   }
 
-  static final public Message primaryKeyConstraint(Table t) throws ParseException {Message m;
-    ArrayList<String> arr;
+  static final public Message primaryKeyConstraint(Table t) throws ParseException {ArrayList<String> arr;
+    Message m = null;
     jj_consume_token(PRIMARY_KEY);
     arr = columnNameList();
-m = t.setPrimaryKey(arr);
+if (m == null)
+                m = t.setPrimaryKey(arr);
             {if ("" != null) return m;}
     throw new Error("Missing return statement in function");
   }
 
-  static final public Message referentialConstraint(Table t) throws ParseException {Message m;
-    ArrayList<String> arr1;
+  static final public Message referentialConstraint(Table t) throws ParseException {ArrayList<String> arr1;
     ArrayList<String> arr2;
     Table foreign_table;
     Token tok;
     String tablename;
+    Message m = null;
     jj_consume_token(FOREIGN_KEY);
     arr1 = columnNameList();
     jj_consume_token(REFERENCES);
@@ -247,8 +251,10 @@ m = t.setPrimaryKey(arr);
 tablename = tok.toString();
                     foreign_table = DBManager.getDBManager().findTable(tablename);
                     if (foreign_table == null)
-                        {if ("" != null) return new Message(MessageName.REFERENCE_TABLE_EXISTENCE_ERROR);}
-                    m = t.setForeignKey(arr1, foreign_table, arr2);
+                        m = new Message(MessageName.REFERENCE_TABLE_EXISTENCE_ERROR);
+                    else
+                        if (m == null)
+                            m = t.setForeignKey(arr1, foreign_table, arr2);
                     {if ("" != null) return m;}
     throw new Error("Missing return statement in function");
   }

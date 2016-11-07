@@ -164,7 +164,8 @@ Message createTableQuery() :
     Token tok;
 	String tablename;
 	Table t;
-	Message m;
+	Message m = null;
+	Message m1 = null;
 }
 {
 	< CREATE_TABLE >
@@ -173,13 +174,15 @@ Message createTableQuery() :
 		    tablename = tok.toString();
 			t = DBManager.getDBManager().findTable(tablename);
 			if (t != null)
-				return new Message(MessageName.TABLE_EXISTENCE_ERROR);
+			    m = new Message(MessageName.TABLE_EXISTENCE_ERROR);
 			t = new Table(tablename);
 		}
-	m = tableElementList(t)
+	m1 = tableElementList(t)
 	{
 	    if (m != null)
 	        return m;
+	    if (m1 != null)
+	        return m1;
 	    DBManager.getDBManager().addTable(t);
 	    return new Message(MessageName.CREATE_TABLE_SUCCESS, tablename);
 	}
@@ -187,39 +190,36 @@ Message createTableQuery() :
 
 Message tableElementList(Table t) :
 {
-    Message m;
+    Message m = null;
+    Message m1 = null;
 }
 {
 	< LEFT_PAREN >
 		m = tableElement(t)
-		{
-			if (m != null)
-				return m;
-		}
 	(
 	 < COMMA >
-	 m = tableElement(t)
-	 {
-	    if (m != null)
-	        return m;
-	 }
+	    m1 = tableElement(t)
+	    {
+	        if (m == null)
+	            m = m1;
+	    }
 	)*
 	< RIGHT_PAREN >
 	{
-	    return null;
+	    return m;
 	}
 }
 
 Message tableElement(Table t) :
 {
-    Message m;
+    Message m = null;
 }
 {
 	((m = columnDefinition(t))
 		| (m = tableConstraintDefinition(t)))
-	{
-	    return m;
-	}
+    {
+        return m;
+    }
 }
 
 Message columnDefinition(Table t) :
@@ -228,7 +228,7 @@ Message columnDefinition(Table t) :
 	Token tok;
 	String columnname;
 	Attribute attr;
-	Message m;
+	Message m = null;
 }
 {
 	tok = < LEGAL_IDENT >
@@ -236,7 +236,7 @@ Message columnDefinition(Table t) :
 		{
 		    columnname = tok.toString();
 		    if (!typ.isValid())
-		        return new Message(MessageName.CHAR_LENGTH_ERROR);
+		        m = new Message(MessageName.CHAR_LENGTH_ERROR);
 			attr = new Attribute(typ, columnname);
 		}
 	(
@@ -246,14 +246,15 @@ Message columnDefinition(Table t) :
 	 }
 	)?
 	{
-		m = t.addAttribute(attr);
+	    if (m == null)
+		    m = t.addAttribute(attr);
 		return m;
 	}
 }
 
 Message tableConstraintDefinition(Table t) :
 {
-    Message m;
+    Message m = null;
 }
 {
 	((m = primaryKeyConstraint(t))
@@ -265,26 +266,27 @@ Message tableConstraintDefinition(Table t) :
 
 Message primaryKeyConstraint(Table t) :
 {
-    Message m;
     ArrayList<String> arr;
+    Message m = null;
 }
 {
 	< PRIMARY_KEY >
 	     arr = columnNameList()
 	{
-	    m = t.setPrimaryKey(arr);
+	    if (m == null)
+	        m = t.setPrimaryKey(arr);
 	    return m;
 	}
 }
 
 Message referentialConstraint(Table t) :
 {
-    Message m;
     ArrayList<String> arr1;
     ArrayList<String> arr2;
     Table foreign_table;
     Token tok;
     String tablename;
+    Message m = null;
 }
 {
 	< FOREIGN_KEY >
@@ -296,8 +298,10 @@ Message referentialConstraint(Table t) :
 		    tablename = tok.toString();
 		    foreign_table = DBManager.getDBManager().findTable(tablename);
 		    if (foreign_table == null)
-		        return new Message(MessageName.REFERENCE_TABLE_EXISTENCE_ERROR);
-		    m = t.setForeignKey(arr1, foreign_table, arr2);
+		        m = new Message(MessageName.REFERENCE_TABLE_EXISTENCE_ERROR);
+		    else
+		        if (m == null)
+		            m = t.setForeignKey(arr1, foreign_table, arr2);
 		    return m;
 		}
 }
@@ -323,7 +327,7 @@ ArrayList<String> columnNameList() :
 		    arr.add(s);
 		 }
 		)*
-		< RIGHT_PAREN >
+	< RIGHT_PAREN >
 	{
 	    return arr;
 	}

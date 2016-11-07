@@ -33,7 +33,7 @@ public class Table {
         Iterator<Attribute> it = attrList.iterator();
         while (it.hasNext()) {
             Attribute n = it.next();
-            if (n.getAttributeName().equalsIgnoreCase(attrName))
+            if (attrName.equalsIgnoreCase(n.getAttributeName()))
                 return n;
         }
         return null;
@@ -73,7 +73,7 @@ public class Table {
         Iterator<Attribute> it = attrList.iterator();
         while (it.hasNext()) {
             Attribute n = it.next();
-            if (n.getAttributeName().equalsIgnoreCase(attrName))
+            if (attrName.equalsIgnoreCase(n.getAttributeName()))
                 return true;
         }
         return false;
