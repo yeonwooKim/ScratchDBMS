@@ -38,17 +38,21 @@ public class DBManager implements Serializable {
     }
 
     public Message dropTable(String tablename) {
+        Message m;
         Table t = findTable(tablename);
         if (t == null) {
-            return new Message(MessageName.NO_SUCH_TABLE);
+            return Message.getNoSuchTable();
         }
 
         if (t.getReferredList().size() != 0) {
-            return new Message(MessageName.DROP_REFERENCED_TABLE_ERROR, tablename);
+            m = Message.getDropReferencedTable();
+            m.setNameArg(tablename);
         }
 
         tables.remove(t);
-        return new Message(MessageName.DROP_SUCCESS, tablename);
+        m = Message.getDropSuccess();
+        m.setNameArg(tablename);
+        return m;
     }
 
     private static void desc(Table t) {
@@ -72,7 +76,7 @@ public class DBManager implements Serializable {
     public Message descTable(String tablename) {
         Table t = findTable(tablename);
         if (t == null) {
-            return new Message(MessageName.NO_SUCH_TABLE);
+            return Message.getNoSuchTable();
         }
 
         desc(t);
@@ -82,7 +86,7 @@ public class DBManager implements Serializable {
     public Message showTables() {
         Iterator<Table> it = tables.iterator();
         if (!it.hasNext()) {
-            return new Message(MessageName.SHOW_TABLES_NO_TABLE);
+            return Message.getShowTablesNoTable();
         }
         System.out.println("----------------");
         while (it.hasNext()) {

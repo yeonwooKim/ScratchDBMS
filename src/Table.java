@@ -42,7 +42,7 @@ public class Table implements Serializable {
 
     public Message setPrimaryKey(ArrayList<String> p) {
         if (!primaryKey.isEmpty()) {
-            return new Message(MessageName.DUPLICATE_PRIMARY_KEY_DEF_ERROR);
+            return Message.getDuplicatePrimaryKeyDef();
         }
 
         Iterator<String> it = p.iterator();
@@ -51,7 +51,7 @@ public class Table implements Serializable {
             String n = it.next();
             Attribute nAttr = findAttribute(n);
             if (nAttr == null) {
-               return new Message(MessageName.NON_EXISTING_COLUMN_DEF_ERROR, n);
+               return Message.getNonExistingColumnDef();
             }
             nAttrList.add(nAttr);
         }
@@ -82,7 +82,7 @@ public class Table implements Serializable {
 
     public Message addAttribute(Attribute attr) {
         if (checkDuplicate(attr.getAttributeName())) {
-            return new Message(MessageName.DUPLICATE_COLUMN_DEF_ERROR);
+            return Message.getDuplicateColumnDef();
         }
         attrList.add(attr);
         return null;
@@ -95,13 +95,13 @@ public class Table implements Serializable {
     public Message setForeignKey(ArrayList<String> foreignKey,
                                  Table table, ArrayList<String> reference) {
         if (foreignKey.size() != reference.size()) {
-            return new Message(MessageName.REFERENCE_TYPE_ERROR);
+            return Message.getReferenceType();
         }
 
         ArrayList<Attribute> prime = table.getPrimaryKey();
         ArrayList<Attribute> aAttrList = new ArrayList<>();
         if (prime.size() != reference.size()) {
-            return new Message(MessageName.REFERENCE_NON_PRIMARY_KEY_ERROR);
+            return Message.getReferenceNonPrimaryKey();
         }
         Iterator<String> itForeign = foreignKey.iterator();
         Iterator<String> itReference = reference.iterator();
@@ -109,21 +109,23 @@ public class Table implements Serializable {
             String a = itForeign.next();
             Attribute aAttr = findAttribute(a);
             if (aAttr == null) {
-                return new Message(MessageName.NON_EXISTING_COLUMN_DEF_ERROR, a);
+                Message m = Message.getNonExistingColumnDef();
+                m.setNameArg(a);
+                return m;
             }
             aAttrList.add(aAttr);
             String b = itReference.next();
             Attribute bAttr = table.findAttribute(b);
             if (bAttr == null) {
-                return new Message(MessageName.REFERENCE_COLUMN_EXISTENCE_ERROR);
+                return Message.getReferenceColumnExistence();
             }
 
             if (!prime.contains(bAttr)) {
-                return new Message(MessageName.REFERENCE_NON_PRIMARY_KEY_ERROR);
+                return Message.getReferenceNonPrimaryKey();
             }
 
             if (aAttr.getAttributeType().compareTo(bAttr.getAttributeType()) != 0) {
-                return new Message(MessageName.REFERENCE_TYPE_ERROR);
+                return Message.getReferenceType();
             }
         }
 

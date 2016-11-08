@@ -25,7 +25,7 @@ import java.util.ArrayList;
 			}
 			catch (Exception e)
 			{
-				MessagePrinter.printMessage(new Message(MessageName.SYNTAX_ERROR));
+				MessagePrinter.printMessage(Message.getSyntaxError());
 				ScratchDBMSParser.ReInit(System.in);
 			}
 		}
@@ -142,19 +142,19 @@ Message query() :
 	 | (
 		 selectQuery()
 		 {
-		 m = new Message(MessageName.SELECT);
+		 m = Message.getSelect();
 		 }
 		 )
 	 | (
 		 insertQuery()
 		 {
-		 m = new Message(MessageName.INSERT);
+		 m = Message.getInsert();
 		 }
 		 )
 	 | (
 			 deleteQuery()
 			 {
-			 m = new Message(MessageName.DELETE);
+			 m = Message.getDelete();
 			 }
 		 )
 	 | (
@@ -184,7 +184,7 @@ Message createTableQuery() :
 		    tablename = tok.toString();
 			t = DBManager.getDBManager().findTable(tablename);
 			if (t != null)
-			    m = new Message(MessageName.TABLE_EXISTENCE_ERROR);
+			    m = Message.getTableExistence();
 			t = new Table(tablename);
 		}
 	m1 = tableElementList(t)
@@ -194,7 +194,9 @@ Message createTableQuery() :
 	    if (m1 != null)
 	        return m1;
 	    DBManager.getDBManager().addTable(t);
-	    return new Message(MessageName.CREATE_TABLE_SUCCESS, tablename);
+	    m = Message.getCreateTableSuccess();
+	    m.setNameArg(tablename);
+	    return m;
 	}
 }
 
@@ -246,7 +248,7 @@ Message columnDefinition(Table t) :
 		{
 		    columnname = tok.toString();
 		    if (!typ.isValid())
-		        m = new Message(MessageName.CHAR_LENGTH_ERROR);
+		        m = Message.getCharLength();
 			attr = new Attribute(typ, columnname);
 		}
 	(
@@ -308,7 +310,7 @@ Message referentialConstraint(Table t) :
 		    tablename = tok.toString();
 		    foreign_table = DBManager.getDBManager().findTable(tablename);
 		    if (foreign_table == null)
-		        m = new Message(MessageName.REFERENCE_TABLE_EXISTENCE_ERROR);
+		        m = Message.getReferenceTableExistence();
 		    else
 		        if (m == null)
 		            m = t.setForeignKey(arr1, foreign_table, arr2);
@@ -396,13 +398,16 @@ Message descQuery() :
 {
     Token tok;
 	String tablename;
+	Message m;
 }
 {
 	< DESC >
 		tok = < LEGAL_IDENT >
 		{
 		    tablename = tok.toString();
-			return new Message(MessageName.DESC_TABLE, tablename);
+		    m = Message.getDescTable();
+		    m.setNameArg(tablename);
+			return m;
 		}
 }
 
@@ -412,7 +417,7 @@ Message showTablesQuery() :
 {
 	< SHOW_TABLES >
 	{
-		return new Message(MessageName.SHOW_TABLES);
+		return Message.getShowTables();
 	}
 }
 

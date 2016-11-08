@@ -17,7 +17,7 @@ import java.util.ArrayList;
                         }
                         catch (Exception e)
                         {
-                                MessagePrinter.printMessage(new Message(MessageName.SYNTAX_ERROR));
+                                MessagePrinter.printMessage(Message.getSyntaxError());
                                 ScratchDBMSParser.ReInit(System.in);
                         }
                 }
@@ -93,17 +93,17 @@ if (m.getMessagename() == MessageName.DROP_SUCCESS)
       }
     case SELECT:{
       selectQuery();
-m = new Message(MessageName.SELECT);
+m = Message.getSelect();
       break;
       }
     case INSERT_INTO:{
       insertQuery();
-m = new Message(MessageName.INSERT);
+m = Message.getInsert();
       break;
       }
     case DELETE_FROM:{
       deleteQuery();
-m = new Message(MessageName.DELETE);
+m = Message.getDelete();
       break;
       }
     case SHOW_TABLES:{
@@ -130,7 +130,7 @@ m = new Message(MessageName.DELETE);
 tablename = tok.toString();
                         t = DBManager.getDBManager().findTable(tablename);
                         if (t != null)
-                            m = new Message(MessageName.TABLE_EXISTENCE_ERROR);
+                            m = Message.getTableExistence();
                         t = new Table(tablename);
     m1 = tableElementList(t);
 if (m != null)
@@ -138,7 +138,9 @@ if (m != null)
             if (m1 != null)
                 {if ("" != null) return m1;}
             DBManager.getDBManager().addTable(t);
-            {if ("" != null) return new Message(MessageName.CREATE_TABLE_SUCCESS, tablename);}
+            m = Message.getCreateTableSuccess();
+            m.setNameArg(tablename);
+            {if ("" != null) return m;}
     throw new Error("Missing return statement in function");
   }
 
@@ -196,7 +198,7 @@ if (m == null)
     typ = dataType();
 columnname = tok.toString();
                     if (!typ.isValid())
-                        m = new Message(MessageName.CHAR_LENGTH_ERROR);
+                        m = Message.getCharLength();
                         attr = new Attribute(typ, columnname);
     switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
     case NOT_NULL:{
@@ -257,7 +259,7 @@ if (m == null)
 tablename = tok.toString();
                     foreign_table = DBManager.getDBManager().findTable(tablename);
                     if (foreign_table == null)
-                        m = new Message(MessageName.REFERENCE_TABLE_EXISTENCE_ERROR);
+                        m = Message.getReferenceTableExistence();
                     else
                         if (m == null)
                             m = t.setForeignKey(arr1, foreign_table, arr2);
@@ -342,17 +344,20 @@ tablename = tok.toString();
 /* desc statement */
   static final public Message descQuery() throws ParseException {Token tok;
         String tablename;
+        Message m;
     jj_consume_token(DESC);
     tok = jj_consume_token(LEGAL_IDENT);
 tablename = tok.toString();
-                        {if ("" != null) return new Message(MessageName.DESC_TABLE, tablename);}
+                    m = Message.getDescTable();
+                    m.setNameArg(tablename);
+                        {if ("" != null) return m;}
     throw new Error("Missing return statement in function");
   }
 
 /* show tables statement */
   static final public Message showTablesQuery() throws ParseException {
     jj_consume_token(SHOW_TABLES);
-{if ("" != null) return new Message(MessageName.SHOW_TABLES);}
+{if ("" != null) return Message.getShowTables();}
     throw new Error("Missing return statement in function");
   }
 
