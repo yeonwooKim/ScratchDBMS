@@ -10,7 +10,7 @@ import java.io.*;
    updating and retrieving database manager inside for each successful creation and drop
  */
 public class Berkeley {
-    private static Berkeley berk = null;
+    private static Berkeley berk = null; // singleton class
     private Environment dbEnv = null;
     private Database db = null;
 
@@ -30,7 +30,7 @@ public class Berkeley {
         dbConfig.setAllowCreate(true);
         db = dbEnv.openDatabase(null, "scratchDB", dbConfig);
 
-        DBManager m = retrieveManager();
+        DBManager m = retrieveManager(); // Retrieve manager from file if there is
         if (m != null)
             DBManager.setDBManager(m);
     }
@@ -58,7 +58,9 @@ public class Berkeley {
             }
         }
     }
+
     public void updateManager() {
+        // Update manager data in file whenever manager changes (drop / create table)
         Cursor cursor = null;
         DatabaseEntry key;
         DatabaseEntry data = new DatabaseEntry();

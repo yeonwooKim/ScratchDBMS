@@ -38,9 +38,9 @@ public class DBManager implements Serializable {
 
     public void addTable(Table t) {
         tables.add(t);
-    }
+    } // Called when CREATE TABLE requested
 
-    public Message dropTable(String tablename) {
+    public Message dropTable(String tablename) { // Called when DROP TABLE requested
         Message m;
         Table t = findTable(tablename);
         if (t == null) {
@@ -50,6 +50,7 @@ public class DBManager implements Serializable {
         if (t.getReferredList().size() != 0) {
             m = Message.getDropReferencedTable();
             m.setNameArg(tablename);
+            return m;
         }
 
         tables.remove(t);
@@ -58,7 +59,7 @@ public class DBManager implements Serializable {
         return m;
     }
 
-    private static void desc(Table t) {
+    private static void desc(Table t) { // Print in the right format
         System.out.println("-------------------------------------------------");
         System.out.println("table_name [" + t.getTableName() + "]");
         System.out.println("column_name\t\t\ttype\t\tnull\t\tkey");
@@ -76,7 +77,7 @@ public class DBManager implements Serializable {
         }
         System.out.println("-------------------------------------------------");
     }
-    public Message descTable(String tablename) {
+    public Message descTable(String tablename) { // Called when DESC requested
         Table t = findTable(tablename);
         if (t == null) {
             return Message.getNoSuchTable();
@@ -86,7 +87,7 @@ public class DBManager implements Serializable {
         return null;
     }
 
-    public Message showTables() {
+    public Message showTables() { // Called when SHOW TABLES requested
         Iterator<Table> it = tables.iterator();
         if (!it.hasNext()) {
             return Message.getShowTablesNoTable();

@@ -41,6 +41,7 @@ public class Table implements Serializable {
     }
 
     public Message setPrimaryKey(ArrayList<String> p) {
+        // Set primary key, check all possible errors
         if (!primaryKey.isEmpty()) {
             return Message.getDuplicatePrimaryKeyDef();
         }
@@ -94,6 +95,7 @@ public class Table implements Serializable {
 
     public Message setForeignKey(ArrayList<String> foreignKey,
                                  Table table, ArrayList<String> reference) {
+        // Set foreign key, check all possible errors
         if (foreignKey.size() != reference.size()) {
             return Message.getReferenceType();
         }
