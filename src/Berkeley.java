@@ -28,7 +28,6 @@ public class Berkeley {
 
         DatabaseConfig dbConfig = new DatabaseConfig();
         dbConfig.setAllowCreate(true);
-        dbConfig.setSortedDuplicates(true);
         db = dbEnv.openDatabase(null, "scratchDB", dbConfig);
 
         DBManager m = retrieveManager();
@@ -62,11 +61,12 @@ public class Berkeley {
     public void updateManager() {
         Cursor cursor = null;
         DatabaseEntry key;
-        DatabaseEntry data;
+        DatabaseEntry data = new DatabaseEntry();
 
         try {
             cursor = db.openCursor(null, null);
             key = new DatabaseEntry("DBM".getBytes("UTF-8"));
+            cursor.getSearchKey(key, data, LockMode.DEFAULT);
             data = new DatabaseEntry(serialize(DBManager.getDBManager()));
             cursor.put(key, data);
             cursor.close();

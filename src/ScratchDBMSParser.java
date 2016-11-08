@@ -5,6 +5,11 @@ import java.util.ArrayList;
         public class ScratchDBMSParser implements ScratchDBMSParserConstants {
         public static void main(String args[]) throws ParseException
         {
+            Runtime.getRuntime().addShutdownHook(new Thread() {
+              public void run() {
+                Berkeley.getBerkeley().close();
+              }
+            });
             Berkeley.getBerkeley().open();
                 ScratchDBMSParser parser = new ScratchDBMSParser(System.in);
                 MessagePrinter.printPrompt();
@@ -38,8 +43,7 @@ import java.util.ArrayList;
     case EXIT:{
       jj_consume_token(EXIT);
       jj_consume_token(SEMICOLON);
-Berkeley.getBerkeley().close();
-                                System.exit(0);
+System.exit(0);
       break;
       }
     default:
