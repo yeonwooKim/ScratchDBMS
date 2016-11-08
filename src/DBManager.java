@@ -5,6 +5,9 @@ import java.util.Iterator;
 /**
  * Created by yeonwoo_kim on 11/6/16.
  */
+/* DBManager class handles all the DDL queries
+   Manages a list of Table classes
+ */
 public class DBManager implements Serializable {
     private static DBManager manager = null;
     private ArrayList<Table> tables;
@@ -58,7 +61,7 @@ public class DBManager implements Serializable {
     private static void desc(Table t) {
         System.out.println("-------------------------------------------------");
         System.out.println("table_name [" + t.getTableName() + "]");
-        System.out.println("column_name\ttype\tnull\tkey");
+        System.out.println("column_name\t\t\ttype\t\tnull\t\tkey");
         ArrayList<Attribute> attrList = t.getAttrList();
         Iterator<Attribute> it = attrList.iterator();
         while (it.hasNext()) {
@@ -67,9 +70,9 @@ public class DBManager implements Serializable {
             String key = (n.isPrimaryKey()) ?
                     ((n.isForeignKey()) ? "PRI/FOR" : "PRI") :
                     ((n.isForeignKey()) ? "FOR" : "");
-            System.out.println(n.getAttributeName() + "\t" +
-                    n.getAttributeType().toString() + "\t" +
-                    isNull + "\t" + key);
+            System.out.println(n.getAttributeName() + "\t\t\t\t" +
+                    n.getAttributeType().toString() + "\t\t" +
+                    isNull + "\t\t" + key);
         }
         System.out.println("-------------------------------------------------");
     }

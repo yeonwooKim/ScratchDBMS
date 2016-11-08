@@ -4,6 +4,7 @@ import java.io.Serializable;
  * Created by yeonwoo_kim on 11/6/16.
  */
 
+/* Attribute class describes each attribute in a table */
 public class Attribute implements Serializable {
     private Type attrType;
     private String attrName;

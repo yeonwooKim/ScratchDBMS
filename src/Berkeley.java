@@ -6,6 +6,9 @@ import com.sleepycat.je.*;
 
 import java.io.*;
 
+/* Berkeley class is in charge of opening, closing the berkely db,
+   updating and retrieving database manager inside for each successful creation and drop
+ */
 public class Berkeley {
     private static Berkeley berk = null;
     private Environment dbEnv = null;
