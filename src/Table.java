@@ -56,7 +56,9 @@ public class Table implements Serializable {
             String n = it.next();
             Attribute nAttr = findAttribute(n);
             if (nAttr == null) {
-               return Message.getNonExistingColumnDef();
+                Message m = Message.getNonExistingColumnDef();
+                m.setNameArg(n);
+               return m;
             }
             nAttrList.add(nAttr);
         }

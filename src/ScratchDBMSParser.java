@@ -89,7 +89,6 @@ System.exit(0);
     label_1:
     while (true) {
       m = query();
-      jj_consume_token(SEMICOLON);
 MessagePrinter.printMessage(m);
       switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
       case CREATE:
@@ -210,6 +209,7 @@ if (b.getBufferName() == BufferName.DEFINITION)
                         arrList.add(b.getArr());
     }
     jj_consume_token(RIGHT_PAREN);
+    jj_consume_token(SEMICOLON);
 Iterator<Attribute> it1 = attrList.iterator();
             while (it1.hasNext()) {
                 Attribute attr = it1.next();
@@ -412,6 +412,7 @@ t = new Type(TypeName.DATE, -1);
     jj_consume_token(DROP);
     jj_consume_token(TABLE);
     tok = jj_consume_token(LEGAL_IDENT);
+    jj_consume_token(SEMICOLON);
 tablename = tok.toString();
                         m = DBManager.getDBManager().dropTable(tablename);
                         {if ("" != null) return m;}
@@ -424,6 +425,7 @@ tablename = tok.toString();
         Message m;
     jj_consume_token(DESC);
     tok = jj_consume_token(LEGAL_IDENT);
+    jj_consume_token(SEMICOLON);
 tablename = tok.toString();
                     m = Message.getDescTable();
                     m.setNameArg(tablename);
@@ -435,6 +437,7 @@ tablename = tok.toString();
   static final public Message showTablesQuery() throws ParseException {
     jj_consume_token(SHOW);
     jj_consume_token(TABLES);
+    jj_consume_token(SEMICOLON);
 {if ("" != null) return Message.getShowTables();}
     throw new Error("Missing return statement in function");
   }
@@ -444,6 +447,7 @@ tablename = tok.toString();
     jj_consume_token(SELECT);
     selectList();
     tableExpression();
+    jj_consume_token(SEMICOLON);
   }
 
   static final public void selectList() throws ParseException {
@@ -725,6 +729,7 @@ tablename = tok.toString();
     jj_consume_token(INTO);
     jj_consume_token(LEGAL_IDENT);
     insertColumnsAndSource();
+    jj_consume_token(SEMICOLON);
   }
 
   static final public void insertColumnsAndSource() throws ParseException {
@@ -794,6 +799,7 @@ tablename = tok.toString();
       jj_la1[27] = jj_gen;
       ;
     }
+    jj_consume_token(SEMICOLON);
   }
 
   static final public void tableColumn() throws ParseException {

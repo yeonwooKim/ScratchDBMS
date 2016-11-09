@@ -68,9 +68,10 @@ public class DBManager implements Serializable {
     }
 
     private static void desc(Table t) { // Print in the right format
+        String format = "%-20s%-10s%-10s%-10s";
         System.out.println("-------------------------------------------------");
         System.out.println("table_name [" + t.getTableName() + "]");
-        System.out.println("column_name\t\t\ttype\t\tnull\t\tkey");
+        System.out.println(String.format(format, "column_name", "type", "null", "key"));
         ArrayList<Attribute> attrList = t.getAttrList();
         Iterator<Attribute> it = attrList.iterator();
         while (it.hasNext()) {
@@ -79,9 +80,9 @@ public class DBManager implements Serializable {
             String key = (n.isPrimaryKey()) ?
                     ((n.isForeignKey()) ? "PRI/FOR" : "PRI") :
                     ((n.isForeignKey()) ? "FOR" : "");
-            System.out.println(n.getAttributeName() + "\t\t\t\t" +
-                    n.getAttributeType().toString() + "\t\t" +
-                    isNull + "\t\t" + key);
+            System.out.println(String.format(format, n.getAttributeName(),
+                    n.getAttributeType().toString(),
+                    isNull, key));
         }
         System.out.println("-------------------------------------------------");
     }

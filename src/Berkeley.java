@@ -35,7 +35,7 @@ public class Berkeley {
             DBManager.setDBManager(m);
     }
 
-    public void close() {
+    public void close() { // Close database
         if (db != null)
             db.close();
         if (dbEnv != null)

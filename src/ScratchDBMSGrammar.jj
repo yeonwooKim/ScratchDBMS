@@ -147,7 +147,6 @@ void queryList() :
 {
 	(
 	 m = query()
-	 < SEMICOLON >
 	 {
 	 MessagePrinter.printMessage(m);
 	 }
@@ -265,6 +264,7 @@ Message tableElementList(Table t) :
 	    }
 	)*
 	< RIGHT_PAREN >
+	< SEMICOLON>
 	{
 	    Iterator<Attribute> it1 = attrList.iterator();
 	    while (it1.hasNext()) {
@@ -462,6 +462,7 @@ Message dropTableQuery() :
 {
 	< DROP > < TABLE >
 		tok = < LEGAL_IDENT >
+		< SEMICOLON >
 		{
 		    tablename = tok.toString();
 			m = DBManager.getDBManager().dropTable(tablename);
@@ -479,6 +480,7 @@ Message descQuery() :
 {
 	< DESC >
 		tok = < LEGAL_IDENT >
+		< SEMICOLON >
 		{
 		    tablename = tok.toString();
 		    m = Message.getDescTable();
@@ -492,6 +494,7 @@ Message showTablesQuery() :
 {}
 {
 	< SHOW > < TABLES >
+	< SEMICOLON >
 	{
 		return Message.getShowTables();
 	}
@@ -504,6 +507,7 @@ void selectQuery() :
 	< SELECT >
 		selectList()
 		tableExpression()
+	< SEMICOLON >
 }
 
 void selectList() :
@@ -637,6 +641,7 @@ void insertQuery() :
 	< INSERT > < INTO >
 		< LEGAL_IDENT >
 		insertColumnsAndSource()
+		< SEMICOLON >
 }
 
 void insertColumnsAndSource() :
@@ -668,6 +673,7 @@ void deleteQuery() :
 {
 	< DELETE > < FROM > < LEGAL_IDENT >
 		( whereClause() )?
+	< SEMICOLON >
 }
 
 void tableColumn() :
