@@ -1,2 +1,5 @@
 javacc*
 *.class
+**/out/**
+**/db/**
+**/META-INF/**

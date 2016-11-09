@@ -17,83 +17,87 @@ public interface ScratchDBMSParserConstants {
   /** RegularExpression Id. */
   int DATE = 8;
   /** RegularExpression Id. */
-  int CREATE_TABLE = 9;
+  int CREATE = 9;
   /** RegularExpression Id. */
-  int NOT_NULL = 10;
+  int TABLE = 10;
   /** RegularExpression Id. */
-  int NULL = 11;
+  int NOT = 11;
   /** RegularExpression Id. */
-  int PRIMARY_KEY = 12;
+  int NULL = 12;
   /** RegularExpression Id. */
-  int FOREIGN_KEY = 13;
+  int PRIMARY = 13;
   /** RegularExpression Id. */
-  int REFERENCES = 14;
+  int FOREIGN = 14;
   /** RegularExpression Id. */
-  int DROP_TABLE = 15;
+  int KEY = 15;
   /** RegularExpression Id. */
-  int DESC = 16;
+  int REFERENCES = 16;
   /** RegularExpression Id. */
-  int SHOW_TABLES = 17;
+  int DROP = 17;
   /** RegularExpression Id. */
-  int SELECT = 18;
+  int DESC = 18;
   /** RegularExpression Id. */
-  int FROM = 19;
+  int SHOW = 19;
   /** RegularExpression Id. */
-  int AS = 20;
+  int TABLES = 20;
   /** RegularExpression Id. */
-  int WHERE = 21;
+  int SELECT = 21;
   /** RegularExpression Id. */
-  int OR = 22;
+  int FROM = 22;
   /** RegularExpression Id. */
-  int AND = 23;
+  int AS = 23;
   /** RegularExpression Id. */
-  int NOT = 24;
+  int WHERE = 24;
   /** RegularExpression Id. */
-  int IS_NULL = 25;
+  int OR = 25;
   /** RegularExpression Id. */
-  int IS_NOT_NULL = 26;
+  int AND = 26;
   /** RegularExpression Id. */
-  int INSERT_INTO = 27;
+  int IS = 27;
   /** RegularExpression Id. */
-  int VALUES = 28;
+  int INSERT = 28;
   /** RegularExpression Id. */
-  int DELETE_FROM = 29;
+  int INTO = 29;
   /** RegularExpression Id. */
-  int SEMICOLON = 30;
+  int VALUES = 30;
   /** RegularExpression Id. */
-  int LEFT_PAREN = 31;
+  int DELETE = 31;
   /** RegularExpression Id. */
-  int RIGHT_PAREN = 32;
+  int SEMICOLON = 32;
   /** RegularExpression Id. */
-  int COMMA = 33;
+  int LEFT_PAREN = 33;
   /** RegularExpression Id. */
-  int PERIOD = 34;
+  int RIGHT_PAREN = 34;
   /** RegularExpression Id. */
-  int UNDERSCORE = 35;
+  int COMMA = 35;
   /** RegularExpression Id. */
-  int ASTERISK = 36;
+  int PERIOD = 36;
   /** RegularExpression Id. */
-  int SIGN = 37;
+  int UNDERSCORE = 37;
   /** RegularExpression Id. */
-  int COMP_OP = 38;
+  int ASTERISK = 38;
   /** RegularExpression Id. */
-  int LEGAL_IDENT = 39;
+  int SIGN = 39;
   /** RegularExpression Id. */
-  int INT_VALUE = 40;
+  int COMP_OP = 40;
   /** RegularExpression Id. */
-  int DATE_VALUE = 41;
+  int LEGAL_IDENT = 41;
   /** RegularExpression Id. */
-  int CHAR_STRING = 42;
+  int INT_VALUE = 42;
   /** RegularExpression Id. */
-  int NON_QUOTE_CHAR = 43;
+  int DATE_VALUE = 43;
   /** RegularExpression Id. */
-  int DIGIT = 44;
+  int CHAR_STRING = 44;
   /** RegularExpression Id. */
-  int ALPHABET = 45;
+  int NON_QUOTE_CHAR = 45;
   /** RegularExpression Id. */
-  int NON_QUOTE_SPECIAL_CHAR = 46;
+  int DIGIT = 46;
   /** RegularExpression Id. */
-  int QUOTE = 47;
+  int ALPHABET = 47;
+  /** RegularExpression Id. */
+  int NON_QUOTE_SPECIAL_CHAR = 48;
+  /** RegularExpression Id. */
+  int QUOTE = 49;
 
   /** Lexical state. */
   int DEFAULT = 0;
@@ -109,27 +113,29 @@ public interface ScratchDBMSParserConstants {
     "\"int\"",
     "\"char\"",
     "\"date\"",
-    "\"create table\"",
-    "\"not null\"",
+    "\"create\"",
+    "\"table\"",
+    "\"not\"",
     "\"null\"",
-    "\"primary key\"",
-    "\"foreign key\"",
+    "\"primary\"",
+    "\"foreign\"",
+    "\"key\"",
     "\"references\"",
-    "\"drop table\"",
+    "\"drop\"",
     "\"desc\"",
-    "\"show tables\"",
+    "\"show\"",
+    "\"tables\"",
     "\"select\"",
     "\"from\"",
     "\"as\"",
     "\"where\"",
     "\"or\"",
     "\"and\"",
-    "\"not\"",
-    "\"is null\"",
-    "\"is not null\"",
-    "\"insert into\"",
+    "\"is\"",
+    "\"insert\"",
+    "\"into\"",
     "\"values\"",
-    "\"delete from\"",
+    "\"delete\"",
     "\";\"",
     "\"(\"",
     "\")\"",

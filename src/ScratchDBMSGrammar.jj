@@ -1,419 +1,591 @@
 options
 {
-  static = true;
-  DEBUG_PARSER = false;
-  IGNORE_CASE = true;
+	static = true;
+	DEBUG_PARSER = false;
+	IGNORE_CASE = true;
 }
 
 PARSER_BEGIN(ScratchDBMSParser)
 
-/* Message types */
-enum Message { SYNTAX_ERROR, CREATE_TABLE, DROP_TABLE, DESC, SELECT, INSERT, DELETE, SHOW_TABLES };
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Iterator;
 
-/* Message printer is in charge of printing prompt and result messages */
-class MessagePrinter
-{
-	public static void printPrompt()
-	{
-    System.out.print("DB_2014-17184> ");
-	}
-  public static void printMessage(Message q)
-  {
-    switch(q)
-    {
-      case SYNTAX_ERROR:
-        System.out.println("Syntax error");
-        break;
-      case CREATE_TABLE:
-        System.out.println("\'CREATE TABLE\' requested");
-        break;
-      case DROP_TABLE:
-        System.out.println("\'DROP TABLE\' requested");
-        break;
-      case DESC:
-        System.out.println("\'DESC\' requested");
-        break;
-      case SELECT:
-        System.out.println("\'SELECT\' requested");
-        break;
-      case INSERT:
-        System.out.println("\'INSERT\' requested");
-        break;
-      case DELETE:
-        System.out.println("\'DELETE\' requested");
-        break;
-      case SHOW_TABLES:
-        System.out.println("\'SHOW TABLES\' requested");
-        break;
-      default:
-        System.out.println("Syntax error");
-        break;
+enum BufferName { DEFINITION, CONSTRAINT }
+
+class Buffer {
+    BufferName bn;
+    ArrayList<String> arr;
+    Attribute attr;
+
+    public Buffer(BufferName bn, ArrayList<String> arr) {
+        this.bn = bn;
+        this.arr = arr;
     }
-		printPrompt();
-  }
+
+    public Buffer(BufferName bn, Attribute attr) {
+        this.bn = bn;
+        this.attr = attr;
+    }
+
+    public BufferName getBufferName() {
+        return bn;
+    }
+
+    public ArrayList<String> getArr() {
+        return arr;
+    }
+
+    public Attribute getAttr() {
+        return attr;
+    }
 }
 
-public class ScratchDBMSParser
+	public class ScratchDBMSParser
 {
-  public static void main(String args[]) throws ParseException
-  {
-    ScratchDBMSParser parser = new ScratchDBMSParser(System.in);
+	public static void main(String args[]) throws ParseException
+	{
+	    Runtime.getRuntime().addShutdownHook(new Thread() {
+              public void run() {
+                Berkeley.getBerkeley().close();
+              }
+            });
+	    Berkeley.getBerkeley().open();
+		ScratchDBMSParser parser = new ScratchDBMSParser(System.in);
 		MessagePrinter.printPrompt();
 
-    while (true)
-    {
-      try
-      {
-        parser.command();
-      }
-      catch (Exception e)
-      {
-				MessagePrinter.printMessage(Message.SYNTAX_ERROR);
-        ScratchDBMSParser.ReInit(System.in);
-      }
-    }
-  }
+		while (true)
+		{
+			try
+			{
+				parser.command();
+			}
+			catch (Exception e)
+			{
+				MessagePrinter.printMessage(Message.getSyntaxError());
+				ScratchDBMSParser.ReInit(System.in);
+			}
+		}
+	}
 }
 
 PARSER_END(ScratchDBMSParser)
 
-SKIP : { " " | "\r" | "\t" | "\n" }
+	SKIP : { " " | "\r" | "\t" | "\n" }
 
 TOKEN : /* Keywords */
 {
-  < EXIT : "exit" >
-| < INT : "int" >
-| < CHAR : "char" >
-| < DATE : "date" >
-| < CREATE_TABLE : "create table" >
-| < NOT_NULL : "not null" >
-| < NULL : "null" >
-| < PRIMARY_KEY : "primary key" >
-| < FOREIGN_KEY : "foreign key" >
-| < REFERENCES : "references" >
-| < DROP_TABLE : "drop table" >
-| < DESC : "desc">
-| < SHOW_TABLES : "show tables" >
-| < SELECT : "select" >
-| < FROM : "from" >
-| < AS : "as" >
-| < WHERE : "where" >
-| < OR : "or" >
-| < AND : "and" >
-| < NOT : "not" >
-| < IS_NULL : "is null" >
-| < IS_NOT_NULL : "is not null" >
-| < INSERT_INTO : "insert into" >
-| < VALUES : "values" >
-| < DELETE_FROM : "delete from" >
+	< EXIT : "exit" >
+		| < INT : "int" >
+		| < CHAR : "char" >
+		| < DATE : "date" >
+		| < CREATE : "create" >
+		| < TABLE : "table" >
+		| < NOT : "not" >
+		| < NULL : "null" >
+		| < PRIMARY : "primary" >
+		| < FOREIGN : "foreign" >
+		| < KEY : "key" >
+		| < REFERENCES : "references" >
+		| < DROP : "drop" >
+		| < DESC : "desc">
+		| < SHOW : "show" >
+		| < TABLES: "tables" >
+		| < SELECT : "select" >
+		| < FROM : "from" >
+		| < AS : "as" >
+		| < WHERE : "where" >
+		| < OR : "or" >
+		| < AND : "and" >
+		| < IS : "is" >
+		| < INSERT : "insert" >
+		| < INTO : "into" >
+		| < VALUES : "values" >
+		| < DELETE : "delete" >
 }
 
 TOKEN :
 {
 	/* ordered properly according to precedence */
-  < SEMICOLON : ";" >
-| < LEFT_PAREN : "(" >
-| < RIGHT_PAREN : ")" >
-| < COMMA : "," >
-| < PERIOD : "." >
-| < UNDERSCORE : "_" >
-| < ASTERISK : "*" >
-| < SIGN : "+" | "-" >
-| < COMP_OP : "<" | ">" | "=" | ">=" | "<=" | "!=" >
-| < LEGAL_IDENT : < ALPHABET > ( < ALPHABET > | < UNDERSCORE > )* >
-| < INT_VALUE : (< SIGN >)? (< DIGIT >)+ >
-| < DATE_VALUE : < DIGIT >< DIGIT >< DIGIT >< DIGIT > "-" < DIGIT >< DIGIT > "-" < DIGIT >< DIGIT > >
-| < CHAR_STRING : < QUOTE > (< NON_QUOTE_CHAR >)* < QUOTE > >
-| < NON_QUOTE_CHAR : < DIGIT > | < ALPHABET > | < NON_QUOTE_SPECIAL_CHAR > | " " >
-| < DIGIT : [ "0"-"9" ] >
-| < ALPHABET : [ "A"-"Z", "a"-"z" ] >
-| < NON_QUOTE_SPECIAL_CHAR : "!" | "@" | "#" | "$" | "%" | "^" | "&" | "*" >
-| < QUOTE : "\'" >
+	< SEMICOLON : ";" >
+		| < LEFT_PAREN : "(" >
+		| < RIGHT_PAREN : ")" >
+		| < COMMA : "," >
+		| < PERIOD : "." >
+		| < UNDERSCORE : "_" >
+		| < ASTERISK : "*" >
+		| < SIGN : "+" | "-" >
+		| < COMP_OP : "<" | ">" | "=" | ">=" | "<=" | "!=" >
+		| < LEGAL_IDENT : < ALPHABET > ( < ALPHABET > | < UNDERSCORE > )* >
+		| < INT_VALUE : (< SIGN >)? (< DIGIT >)+ >
+		| < DATE_VALUE : < DIGIT >< DIGIT >< DIGIT >< DIGIT > "-" < DIGIT >< DIGIT > "-" < DIGIT >< DIGIT > >
+		| < CHAR_STRING : < QUOTE > (< NON_QUOTE_CHAR >)* < QUOTE > >
+		| < NON_QUOTE_CHAR : < DIGIT > | < ALPHABET > | < NON_QUOTE_SPECIAL_CHAR > | " " >
+		| < DIGIT : [ "0"-"9" ] >
+		| < ALPHABET : [ "A"-"Z", "a"-"z" ] >
+		| < NON_QUOTE_SPECIAL_CHAR : "!" | "@" | "#" | "$" | "%" | "^" | "&" | "*" >
+		| < QUOTE : "\'" >
 }
 
 void command() :
 {}
 {
-  queryList()
-| (
-    < EXIT >
-    < SEMICOLON >
-    {
-      System.exit(0);
-    }
-  )
+	queryList()
+		| (
+				< EXIT >
+				< SEMICOLON >
+			)
+		{
+		    System.exit(0);
+		}
 }
 
 void queryList() :
 {
-  Message q;
+	Message m;
 }
 {
-  (
-    q = query()
-    < SEMICOLON >
-    {
-      MessagePrinter.printMessage(q);
-    }
-  )+
+	(
+	 m = query()
+	 < SEMICOLON >
+	 {
+	 MessagePrinter.printMessage(m);
+	 }
+	)+
 }
 
 Message query() :
 {
-  Message q;
+	Message m;
 }
 {
-(
-  (
-    createTableQuery()
-    {
-        q = Message.CREATE_TABLE;
-    }
-  )
-| (
-    dropTableQuery()
-    {
-        q = Message.DROP_TABLE;
-    }
-  )
-| (
-    descQuery()
-    {
-        q = Message.DESC;
-    }
-  )
-| (
-    selectQuery()
-    {
-        q = Message.SELECT;
-    }
-  )
-| (
-    insertQuery()
-    {
-        q = Message.INSERT;
-    }
-  )
-| (
-    deleteQuery()
-    {
-        q = Message.DELETE;
-    }
-   )
-| (
-    showTablesQuery()
-    {
-        q = Message.SHOW_TABLES;
-    }
-   )
-)
-  (
-    {
-      return q;
-    }
-  )
+	(
+	 (
+		m = createTableQuery()
+		{
+		    if (m.getMessagename() == MessageName.CREATE_TABLE_SUCCESS)
+		        Berkeley.getBerkeley().updateManager();
+		}
+	 )
+	 | (
+		 m = dropTableQuery()
+		 {
+		    if (m.getMessagename() == MessageName.DROP_SUCCESS)
+            		        Berkeley.getBerkeley().updateManager();
+		 }
+		 )
+	 | (
+		 m = descQuery()
+		 )
+	 | (
+		 selectQuery()
+		 {
+		 m = Message.getSelect();
+		 }
+		 )
+	 | (
+		 insertQuery()
+		 {
+		 m = Message.getInsert();
+		 }
+		 )
+	 | (
+			 deleteQuery()
+			 {
+			 m = Message.getDelete();
+			 }
+		 )
+	 | (
+			 m = showTablesQuery()
+		 )
+	 )
+	 (
+		{
+		return m;
+		}
+	 )
 }
 
 /* create table statement */
-void createTableQuery() :
-{}
+Message createTableQuery() :
 {
-  < CREATE_TABLE >
-	< LEGAL_IDENT >
-  tableElementList()
+    Token tok;
+	String tablename;
+	Table t;
+	Message m = null;
+	Message m1 = null;
+}
+{
+	< CREATE > < TABLE >
+		tok = < LEGAL_IDENT >
+		{
+		    tablename = tok.toString();
+			t = DBManager.getDBManager().findTable(tablename);
+			if (t != null)
+			    m = Message.getTableExistence();
+			t = new Table(tablename);
+		}
+	m1 = tableElementList(t)
+	{
+	    if (m != null)
+	        return m;
+	    if (m1 != null)
+	        return m1;
+	    DBManager.getDBManager().addTable(t);
+	    m = Message.getCreateTableSuccess();
+	    m.setNameArg(tablename);
+	    return m;
+	}
 }
 
-void tableElementList() :
-{}
+Message tableElementList(Table t) :
 {
-  < LEFT_PAREN >
-  tableElement()
-  (
-    < COMMA >
-    tableElement()
-  )*
-  < RIGHT_PAREN >
+    Message m = null;
+    Buffer b;
+    ArrayList<Attribute> attrList = new ArrayList<Attribute>();
+    ArrayList<ArrayList<String>> arrList = new ArrayList<ArrayList<String>>();
+}
+{
+	< LEFT_PAREN >
+		b = tableElement(t)
+		{
+		    if (b.getBufferName() == BufferName.DEFINITION)
+		        attrList.add(b.getAttr());
+		    else
+		        arrList.add(b.getArr());
+		}
+	(
+	 < COMMA >
+	    b = tableElement(t)
+	    {
+		    if (b.getBufferName() == BufferName.DEFINITION)
+		        attrList.add(b.getAttr());
+		    else
+		        arrList.add(b.getArr());
+	    }
+	)*
+	< RIGHT_PAREN >
+	{
+	    Iterator<Attribute> it1 = attrList.iterator();
+	    while (it1.hasNext()) {
+	        Attribute attr = it1.next();
+	        if (!attr.getAttributeType().isValid()) {
+	            return Message.getCharLength();
+	        }
+	        m = t.addAttribute(attr);
+	        if (m != null)
+	            return m;
+	    }
+	    Iterator<ArrayList<String>> it2 = arrList.iterator();
+	    while (it2.hasNext()) {
+	        ArrayList<String> arr = it2.next();
+	        if (arr.get(0).equals("0")) { // primary key definition
+	            arr.remove(0);
+	            m = t.setPrimaryKey(arr);
+	            if (m != null)
+	                return m;
+	        }
+	        else {
+	            arr.remove(0);
+	            String tablename = arr.get(0);
+	            arr.remove(0);
+	            int index = arr.indexOf("2");
+	            List<String> aList = arr.subList(0, index);
+	            List<String> bList = arr.subList(index + 1, arr.size());
+                Table foreign_table = DBManager.getDBManager().findTable(tablename);
+                if (foreign_table == null)
+                    return Message.getReferenceTableExistence();
+                else
+                    m = t.setForeignKey(new ArrayList(aList), foreign_table, new ArrayList(bList));
+                    if (m != null)
+                        return m;
+	        }
+	    }
+	    return null;
+	}
 }
 
-void tableElement() :
+Buffer tableElement(Table t) :
 {
+    Attribute attr = null;
+    ArrayList<String> arr = null;
 }
 {
-  columnDefinition()
-| tableConstraintDefinition()
-}
-
-void columnDefinition() :
-{}
-{
-	< LEGAL_IDENT >
-  dataType()
-  (
-    < NOT_NULL >
-  )?
+	((attr = columnDefinition(t))
+		| (arr = tableConstraintDefinition(t)))
+    {
+        if (attr != null)
+            return new Buffer(BufferName.DEFINITION, attr);
+        else
+            return new Buffer(BufferName.CONSTRAINT, arr);
+    }
 }
 
-void tableConstraintDefinition() :
-{}
+Attribute columnDefinition(Table t) :
 {
-  primaryKeyConstraint()
-| referentialConstraint()
+	Type typ;
+	Token tok;
+	String columnname;
+	Attribute attr;
+}
+{
+	tok = < LEGAL_IDENT >
+		typ = dataType()
+		{
+		    columnname = tok.toString();
+			attr = new Attribute(typ, columnname);
+		}
+	(
+	 < NOT > < NULL >
+	 {
+	    attr.setNotNull();
+	 }
+	)?
+	{
+		return attr;
+	}
 }
 
-void primaryKeyConstraint() :
-{}
+ArrayList<String> tableConstraintDefinition(Table t) :
 {
-  < PRIMARY_KEY >
-  columnNameList()
+    ArrayList<String> arr;
+}
+{
+	((arr = primaryKeyConstraint(t))
+		| (arr = referentialConstraint(t)))
+	{
+	    return arr;
+	}
 }
 
-void referentialConstraint() :
-{}
+ArrayList<String> primaryKeyConstraint(Table t) :
 {
-  < FOREIGN_KEY >
-  columnNameList()
-  < REFERENCES >
-	< LEGAL_IDENT >
-  columnNameList()
+    ArrayList<String> arr;
+}
+{
+	< PRIMARY > < KEY >
+	     arr = columnNameList()
+	{
+	    arr.add(0,"0");
+	    return arr;
+	}
 }
 
-void columnNameList() :
-{}
+ArrayList<String> referentialConstraint(Table t) :
 {
-  < LEFT_PAREN >
-	< LEGAL_IDENT >
-  (
-    < COMMA >
-		< LEGAL_IDENT >
-  )*
-  < RIGHT_PAREN >
+    ArrayList<String> arr1;
+    ArrayList<String> arr2;
+    Token tok;
+    String tablename;
+}
+{
+	< FOREIGN > < KEY >
+		arr1 = columnNameList()
+		< REFERENCES >
+		tok = < LEGAL_IDENT >
+		arr2 = columnNameList()
+		{
+		    tablename = tok.toString();
+		    arr1.add(0,"1");
+		    arr1.add(1, tablename);
+		    arr1.add("2");
+		    arr1.addAll(arr2);
+		    return arr1;
+		}
 }
 
-void dataType() :
-{}
+ArrayList<String> columnNameList() :
 {
-  < INT >
-| (
-    < CHAR >
-    < LEFT_PAREN >
-		< INT_VALUE >
-    < RIGHT_PAREN >
-  )
-| < DATE >
+    ArrayList<String> arr = new ArrayList<String>();
+    Token tok;
+    String s;
+}
+{
+	< LEFT_PAREN >
+		tok = < LEGAL_IDENT >
+		{
+		    s = tok.toString();
+		    arr.add(s);
+		}
+		(
+		 < COMMA >
+		 tok = < LEGAL_IDENT >
+		 {
+		    s = tok.toString();
+		    arr.add(s);
+		 }
+		)*
+	< RIGHT_PAREN >
+	{
+	    return arr;
+	}
+}
+
+Type dataType() :
+{
+    Type t;
+    Token tok;
+    String intval;
+}
+{
+	(< INT >
+	{
+	    t = new Type(TypeName.INT, -1);
+	    return t;
+	})
+		| (
+				< CHAR >
+				< LEFT_PAREN >
+				tok = < INT_VALUE >
+				< RIGHT_PAREN >
+				{
+				    intval = tok.toString();
+				    t = new Type(TypeName.CHAR, Integer.parseInt(intval));
+				    return t;
+				}
+			)
+		| (< DATE >
+		{
+		    t = new Type(TypeName.DATE, -1);
+		    return t;
+		})
+
 }
 
 /* drop table statement */
-void dropTableQuery() :
-{}
+Message dropTableQuery() :
 {
-    < DROP_TABLE >
-		< LEGAL_IDENT >
+    Token tok;
+	String tablename;
+	Message m;
+}
+{
+	< DROP > < TABLE >
+		tok = < LEGAL_IDENT >
+		{
+		    tablename = tok.toString();
+			m = DBManager.getDBManager().dropTable(tablename);
+			return m;
+		}
 }
 
 /* desc statement */
-void descQuery() :
-{}
+Message descQuery() :
 {
-    < DESC >
-		< LEGAL_IDENT >
+    Token tok;
+	String tablename;
+	Message m;
+}
+{
+	< DESC >
+		tok = < LEGAL_IDENT >
+		{
+		    tablename = tok.toString();
+		    m = Message.getDescTable();
+		    m.setNameArg(tablename);
+			return m;
+		}
 }
 
 /* show tables statement */
-void showTablesQuery() :
+Message showTablesQuery() :
 {}
 {
-    < SHOW_TABLES >
+	< SHOW > < TABLES >
+	{
+		return Message.getShowTables();
+	}
 }
 
 /* select statement */
 void selectQuery() :
 {}
 {
-    < SELECT >
-    selectList()
-    tableExpression()
+	< SELECT >
+		selectList()
+		tableExpression()
 }
 
 void selectList() :
 {}
 {
-    < ASTERISK >
-|   selectedColumn()
-    ( < COMMA > selectedColumn() )*
+	< ASTERISK >
+		|   selectedColumn()
+		( < COMMA > selectedColumn() )*
 }
 
 void selectedColumn() :
 {}
 {
-		tableColumn()
-    ( < AS > < LEGAL_IDENT > )?
+	tableColumn()
+		( < AS > < LEGAL_IDENT > )?
 }
 
 void tableExpression() :
 {}
 {
-    fromClause()
-    ( whereClause() )?
+	fromClause()
+		( whereClause() )?
 }
 
 void fromClause() :
 {}
 {
-    < FROM > tableReferenceList()
+	< FROM > tableReferenceList()
 }
 
 void tableReferenceList() :
 {}
 {
-    referredTable()
-    ( < COMMA > referredTable() )*
+	referredTable()
+		( < COMMA > referredTable() )*
 }
 
 void referredTable() :
 {}
 {
-		< LEGAL_IDENT >
-    ( < AS > < LEGAL_IDENT > )?
+	< LEGAL_IDENT >
+		( < AS > < LEGAL_IDENT > )?
 }
 
 void whereClause() :
 {}
 {
-    < WHERE > booleanValueExpression()
+	< WHERE > booleanValueExpression()
 }
 
 void booleanValueExpression() :
 {}
 {
 	/* eliminate left recursion */
-    booleanTerm() ( < OR > booleanTerm() )*
+	booleanTerm() ( < OR > booleanTerm() )*
 }
 
 void booleanTerm() :
 {}
 {
 	/* eliminate left recursion */
-    booleanFactor() ( < AND > booleanFactor() )*
+	booleanFactor() ( < AND > booleanFactor() )*
 }
 
 void booleanFactor() :
 {}
 {
-    ( < NOT > )?
-    booleanTest()
+	( < NOT > )?
+		booleanTest()
 }
 
 void booleanTest() :
 {}
 {
-    predicate()
-  | parenthesizedBooleanExpression()
+	predicate()
+		| parenthesizedBooleanExpression()
 }
 
 void parenthesizedBooleanExpression() :
 {}
 {
-    < LEFT_PAREN > booleanValueExpression() < RIGHT_PAREN >
+	< LEFT_PAREN > booleanValueExpression() < RIGHT_PAREN >
 }
 
 void predicate() :
@@ -427,99 +599,80 @@ void identifierPredicate() :
 {}
 {
 	tableColumn()
-	( ( < COMP_OP > compOperand() )
-	| nullOperation() ) 
+		( ( < COMP_OP > compOperand() )
+			| nullOperation() ) 
 }
 
 void constantPredicate() :
 {}
 {
 	comparableValue()
-	< COMP_OP >
-	compOperand()
+		< COMP_OP >
+		compOperand()
 }
-
-/*
-void comparisonPredicate() :
- {}
- {
-     compOperand()
-     < COMP_OP >
-     compOperand()
- }
-*/
 
 void compOperand() :
 {}
 {
-    comparableValue()
-  | tableColumn()
+	comparableValue()
+		| tableColumn()
 }
 
 void comparableValue() :
 {}
 {
-    < INT_VALUE > | < CHAR_STRING > | < DATE_VALUE >
+	< INT_VALUE > | < CHAR_STRING > | < DATE_VALUE >
 }
-
-/*
-void nullPredicate() :
-{}
-{
-		tableColumn()
-    nullOperation()
-}
-*/
 
 void nullOperation() :
 {}
 {
-    < IS_NULL > | < IS_NOT_NULL >
+	< IS > ( < NOT > )? < NULL >
 }
 
 /* insert statement */
 void insertQuery() :
 {}
 {
-    < INSERT_INTO >
+	< INSERT > < INTO >
 		< LEGAL_IDENT >
-    insertColumnsAndSource()
+		insertColumnsAndSource()
 }
 
 void insertColumnsAndSource() :
 {}
 {
-    ( columnNameList() )?
-    valueList()
+	( columnNameList() )?
+		valueList()
 }
 
 void valueList() :
 {}
 {
-    < VALUES >
-    < LEFT_PAREN >
-    value()
-    ( < COMMA > value() )*
-    < RIGHT_PAREN >
+	< VALUES >
+		< LEFT_PAREN >
+		value()
+		( < COMMA > value() )*
+		< RIGHT_PAREN >
 }
 
 void value() :
 {}
 {
-    < NULL > | comparableValue()
+	< NULL > | comparableValue()
 }
 
 /* delete statement */
 void deleteQuery() :
 {}
 {
-    < DELETE_FROM > < LEGAL_IDENT >
-    ( whereClause() )?
+	< DELETE > < FROM > < LEGAL_IDENT >
+		( whereClause() )?
 }
 
 void tableColumn() :
 {}
 {
 	< LEGAL_IDENT >
-	( < PERIOD > < LEGAL_IDENT > )?
+		( < PERIOD > < LEGAL_IDENT > )?
 }
