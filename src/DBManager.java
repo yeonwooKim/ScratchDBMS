@@ -53,6 +53,14 @@ public class DBManager implements Serializable {
             return m;
         }
 
+        if (t.getReferringList().size() != 0) {
+            ArrayList<Table> rt = t.getReferringList();
+            Iterator<Table> it = rt.iterator();
+            while (it.hasNext()) {
+                it.next().removeReferred(t);
+            }
+        }
+
         tables.remove(t);
         m = Message.getDropSuccess();
         m.setNameArg(tablename);

@@ -62,13 +62,13 @@ class Buffer {
 
   static final public void command() throws ParseException {
     switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
-    case CREATE_TABLE:
-    case DROP_TABLE:
+    case CREATE:
+    case DROP:
     case DESC:
-    case SHOW_TABLES:
+    case SHOW:
     case SELECT:
-    case INSERT_INTO:
-    case DELETE_FROM:{
+    case INSERT:
+    case DELETE:{
       queryList();
       break;
       }
@@ -92,13 +92,13 @@ System.exit(0);
       jj_consume_token(SEMICOLON);
 MessagePrinter.printMessage(m);
       switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
-      case CREATE_TABLE:
-      case DROP_TABLE:
+      case CREATE:
+      case DROP:
       case DESC:
-      case SHOW_TABLES:
+      case SHOW:
       case SELECT:
-      case INSERT_INTO:
-      case DELETE_FROM:{
+      case INSERT:
+      case DELETE:{
         ;
         break;
         }
@@ -111,13 +111,13 @@ MessagePrinter.printMessage(m);
 
   static final public Message query() throws ParseException {Message m;
     switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
-    case CREATE_TABLE:{
+    case CREATE:{
       m = createTableQuery();
 if (m.getMessagename() == MessageName.CREATE_TABLE_SUCCESS)
                         Berkeley.getBerkeley().updateManager();
       break;
       }
-    case DROP_TABLE:{
+    case DROP:{
       m = dropTableQuery();
 if (m.getMessagename() == MessageName.DROP_SUCCESS)
                                 Berkeley.getBerkeley().updateManager();
@@ -132,17 +132,17 @@ if (m.getMessagename() == MessageName.DROP_SUCCESS)
 m = Message.getSelect();
       break;
       }
-    case INSERT_INTO:{
+    case INSERT:{
       insertQuery();
 m = Message.getInsert();
       break;
       }
-    case DELETE_FROM:{
+    case DELETE:{
       deleteQuery();
 m = Message.getDelete();
       break;
       }
-    case SHOW_TABLES:{
+    case SHOW:{
       m = showTablesQuery();
       break;
       }
@@ -161,7 +161,8 @@ m = Message.getDelete();
         Table t;
         Message m = null;
         Message m1 = null;
-    jj_consume_token(CREATE_TABLE);
+    jj_consume_token(CREATE);
+    jj_consume_token(TABLE);
     tok = jj_consume_token(LEGAL_IDENT);
 tablename = tok.toString();
                         t = DBManager.getDBManager().findTable(tablename);
@@ -255,8 +256,8 @@ Iterator<Attribute> it1 = attrList.iterator();
       attr = columnDefinition(t);
       break;
       }
-    case PRIMARY_KEY:
-    case FOREIGN_KEY:{
+    case PRIMARY:
+    case FOREIGN:{
       arr = tableConstraintDefinition(t);
       break;
       }
@@ -281,8 +282,9 @@ if (attr != null)
 columnname = tok.toString();
                         attr = new Attribute(typ, columnname);
     switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
-    case NOT_NULL:{
-      jj_consume_token(NOT_NULL);
+    case NOT:{
+      jj_consume_token(NOT);
+      jj_consume_token(NULL);
 attr.setNotNull();
       break;
       }
@@ -296,11 +298,11 @@ attr.setNotNull();
 
   static final public ArrayList<String> tableConstraintDefinition(Table t) throws ParseException {ArrayList<String> arr;
     switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
-    case PRIMARY_KEY:{
+    case PRIMARY:{
       arr = primaryKeyConstraint(t);
       break;
       }
-    case FOREIGN_KEY:{
+    case FOREIGN:{
       arr = referentialConstraint(t);
       break;
       }
@@ -314,7 +316,8 @@ attr.setNotNull();
   }
 
   static final public ArrayList<String> primaryKeyConstraint(Table t) throws ParseException {ArrayList<String> arr;
-    jj_consume_token(PRIMARY_KEY);
+    jj_consume_token(PRIMARY);
+    jj_consume_token(KEY);
     arr = columnNameList();
 arr.add(0,"0");
             {if ("" != null) return arr;}
@@ -325,7 +328,8 @@ arr.add(0,"0");
     ArrayList<String> arr2;
     Token tok;
     String tablename;
-    jj_consume_token(FOREIGN_KEY);
+    jj_consume_token(FOREIGN);
+    jj_consume_token(KEY);
     arr1 = columnNameList();
     jj_consume_token(REFERENCES);
     tok = jj_consume_token(LEGAL_IDENT);
@@ -405,7 +409,8 @@ t = new Type(TypeName.DATE, -1);
   static final public Message dropTableQuery() throws ParseException {Token tok;
         String tablename;
         Message m;
-    jj_consume_token(DROP_TABLE);
+    jj_consume_token(DROP);
+    jj_consume_token(TABLE);
     tok = jj_consume_token(LEGAL_IDENT);
 tablename = tok.toString();
                         m = DBManager.getDBManager().dropTable(tablename);
@@ -428,7 +433,8 @@ tablename = tok.toString();
 
 /* show tables statement */
   static final public Message showTablesQuery() throws ParseException {
-    jj_consume_token(SHOW_TABLES);
+    jj_consume_token(SHOW);
+    jj_consume_token(TABLES);
 {if ("" != null) return Message.getShowTables();}
     throw new Error("Missing return statement in function");
   }
@@ -642,8 +648,7 @@ tablename = tok.toString();
       compOperand();
       break;
       }
-    case IS_NULL:
-    case IS_NOT_NULL:{
+    case IS:{
       nullOperation();
       break;
       }
@@ -701,25 +706,23 @@ tablename = tok.toString();
   }
 
   static final public void nullOperation() throws ParseException {
+    jj_consume_token(IS);
     switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
-    case IS_NULL:{
-      jj_consume_token(IS_NULL);
-      break;
-      }
-    case IS_NOT_NULL:{
-      jj_consume_token(IS_NOT_NULL);
+    case NOT:{
+      jj_consume_token(NOT);
       break;
       }
     default:
       jj_la1[23] = jj_gen;
-      jj_consume_token(-1);
-      throw new ParseException();
+      ;
     }
+    jj_consume_token(NULL);
   }
 
 /* insert statement */
   static final public void insertQuery() throws ParseException {
-    jj_consume_token(INSERT_INTO);
+    jj_consume_token(INSERT);
+    jj_consume_token(INTO);
     jj_consume_token(LEGAL_IDENT);
     insertColumnsAndSource();
   }
@@ -779,7 +782,8 @@ tablename = tok.toString();
 
 /* delete statement */
   static final public void deleteQuery() throws ParseException {
-    jj_consume_token(DELETE_FROM);
+    jj_consume_token(DELETE);
+    jj_consume_token(FROM);
     jj_consume_token(LEGAL_IDENT);
     switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
     case WHERE:{
@@ -824,10 +828,10 @@ tablename = tok.toString();
       jj_la1_init_1();
    }
    private static void jj_la1_init_0() {
-      jj_la1_0 = new int[] {0x28078220,0x28078200,0x28078200,0x0,0x3000,0x400,0x3000,0x0,0x1c0,0x0,0x0,0x100000,0x200000,0x0,0x100000,0x400000,0x800000,0x1000000,0x80000000,0x0,0x6000000,0x0,0x0,0x6000000,0x80000000,0x0,0x800,0x200000,0x0,};
+      jj_la1_0 = new int[] {0x902e0220,0x902e0200,0x902e0200,0x0,0x6000,0x800,0x6000,0x0,0x1c0,0x0,0x0,0x800000,0x1000000,0x0,0x800000,0x2000000,0x4000000,0x800,0x0,0x0,0x8000000,0x0,0x0,0x800,0x0,0x0,0x1000,0x1000000,0x0,};
    }
    private static void jj_la1_init_1() {
-      jj_la1_1 = new int[] {0x0,0x0,0x0,0x2,0x80,0x0,0x0,0x2,0x0,0x2,0x90,0x0,0x0,0x2,0x0,0x0,0x0,0x0,0x780,0x780,0x40,0x780,0x700,0x0,0x0,0x2,0x700,0x0,0x4,};
+      jj_la1_1 = new int[] {0x0,0x0,0x0,0x8,0x200,0x0,0x0,0x8,0x0,0x8,0x240,0x0,0x0,0x8,0x0,0x0,0x0,0x0,0x1e02,0x1e00,0x100,0x1e00,0x1c00,0x0,0x2,0x8,0x1c00,0x0,0x10,};
    }
 
   /** Constructor with InputStream. */
@@ -965,7 +969,7 @@ tablename = tok.toString();
   /** Generate ParseException. */
   static public ParseException generateParseException() {
     jj_expentries.clear();
-    boolean[] la1tokens = new boolean[48];
+    boolean[] la1tokens = new boolean[50];
     if (jj_kind >= 0) {
       la1tokens[jj_kind] = true;
       jj_kind = -1;
@@ -982,7 +986,7 @@ tablename = tok.toString();
         }
       }
     }
-    for (int i = 0; i < 48; i++) {
+    for (int i = 0; i < 50; i++) {
       if (la1tokens[i]) {
         jj_expentry = new int[1];
         jj_expentry[0] = i;

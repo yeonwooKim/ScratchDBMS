@@ -79,27 +79,29 @@ TOKEN : /* Keywords */
 		| < INT : "int" >
 		| < CHAR : "char" >
 		| < DATE : "date" >
-		| < CREATE_TABLE : "create table" >
-		| < NOT_NULL : "not null" >
+		| < CREATE : "create" >
+		| < TABLE : "table" >
+		| < NOT : "not" >
 		| < NULL : "null" >
-		| < PRIMARY_KEY : "primary key" >
-		| < FOREIGN_KEY : "foreign key" >
+		| < PRIMARY : "primary" >
+		| < FOREIGN : "foreign" >
+		| < KEY : "key" >
 		| < REFERENCES : "references" >
-		| < DROP_TABLE : "drop table" >
+		| < DROP : "drop" >
 		| < DESC : "desc">
-		| < SHOW_TABLES : "show tables" >
+		| < SHOW : "show" >
+		| < TABLES: "tables" >
 		| < SELECT : "select" >
 		| < FROM : "from" >
 		| < AS : "as" >
 		| < WHERE : "where" >
 		| < OR : "or" >
 		| < AND : "and" >
-		| < NOT : "not" >
-		| < IS_NULL : "is null" >
-		| < IS_NOT_NULL : "is not null" >
-		| < INSERT_INTO : "insert into" >
+		| < IS : "is" >
+		| < INSERT : "insert" >
+		| < INTO : "into" >
 		| < VALUES : "values" >
-		| < DELETE_FROM : "delete from" >
+		| < DELETE : "delete" >
 }
 
 TOKEN :
@@ -214,7 +216,7 @@ Message createTableQuery() :
 	Message m1 = null;
 }
 {
-	< CREATE_TABLE >
+	< CREATE > < TABLE >
 		tok = < LEGAL_IDENT >
 		{
 		    tablename = tok.toString();
@@ -334,7 +336,7 @@ Attribute columnDefinition(Table t) :
 			attr = new Attribute(typ, columnname);
 		}
 	(
-	 < NOT_NULL >
+	 < NOT > < NULL >
 	 {
 	    attr.setNotNull();
 	 }
@@ -361,7 +363,7 @@ ArrayList<String> primaryKeyConstraint(Table t) :
     ArrayList<String> arr;
 }
 {
-	< PRIMARY_KEY >
+	< PRIMARY > < KEY >
 	     arr = columnNameList()
 	{
 	    arr.add(0,"0");
@@ -377,7 +379,7 @@ ArrayList<String> referentialConstraint(Table t) :
     String tablename;
 }
 {
-	< FOREIGN_KEY >
+	< FOREIGN > < KEY >
 		arr1 = columnNameList()
 		< REFERENCES >
 		tok = < LEGAL_IDENT >
@@ -458,7 +460,7 @@ Message dropTableQuery() :
 	Message m;
 }
 {
-	< DROP_TABLE >
+	< DROP > < TABLE >
 		tok = < LEGAL_IDENT >
 		{
 		    tablename = tok.toString();
@@ -489,7 +491,7 @@ Message descQuery() :
 Message showTablesQuery() :
 {}
 {
-	< SHOW_TABLES >
+	< SHOW > < TABLES >
 	{
 		return Message.getShowTables();
 	}
@@ -625,14 +627,14 @@ void comparableValue() :
 void nullOperation() :
 {}
 {
-	< IS_NULL > | < IS_NOT_NULL >
+	< IS > ( < NOT > )? < NULL >
 }
 
 /* insert statement */
 void insertQuery() :
 {}
 {
-	< INSERT_INTO >
+	< INSERT > < INTO >
 		< LEGAL_IDENT >
 		insertColumnsAndSource()
 }
@@ -664,7 +666,7 @@ void value() :
 void deleteQuery() :
 {}
 {
-	< DELETE_FROM > < LEGAL_IDENT >
+	< DELETE > < FROM > < LEGAL_IDENT >
 		( whereClause() )?
 }
 

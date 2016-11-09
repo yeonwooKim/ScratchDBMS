@@ -8,6 +8,7 @@ import java.util.Iterator;
 public class Table implements Serializable {
     private ArrayList<Attribute> attrList;
     private ArrayList<Table> referredList;
+    private ArrayList<Table> referringList;
     private ArrayList<Attribute> primaryKey;
     private String tableName;
 
@@ -15,6 +16,7 @@ public class Table implements Serializable {
         this.tableName = tableName.toLowerCase();
         attrList = new ArrayList<>();
         referredList = new ArrayList<>();
+        referringList = new ArrayList<>();
         primaryKey = new ArrayList<>();
     }
 
@@ -25,6 +27,8 @@ public class Table implements Serializable {
     public ArrayList<Table> getReferredList() {
         return referredList;
     }
+
+    public ArrayList<Table> getReferringList() { return referringList; }
 
     public ArrayList<Attribute> getPrimaryKey() {
         return primaryKey;
@@ -93,6 +97,10 @@ public class Table implements Serializable {
         referredList.add(t);
     }
 
+    public void removeReferred(Table t) { referredList.remove(t); }
+
+    public void addReferring(Table t) { referringList.add(t); }
+
     public Message setForeignKey(ArrayList<String> foreignKey,
                                  Table table, ArrayList<String> reference) {
         // Set foreign key, check all possible errors
@@ -132,6 +140,7 @@ public class Table implements Serializable {
         }
 
         table.addReferred(this);
+        addReferring(table);
         Iterator<Attribute> it = aAttrList.iterator();
         while (it.hasNext()) {
             it.next().setForeignKey();
