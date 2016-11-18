@@ -28,6 +28,7 @@ public class Berkeley {
 
         DatabaseConfig dbConfig = new DatabaseConfig();
         dbConfig.setAllowCreate(true);
+        dbConfig.setSortedDuplicates(true);
         db = dbEnv.openDatabase(null, "scratchDB", dbConfig);
 
         DBManager m = retrieveManager(); // Retrieve manager from file if there is
@@ -67,12 +68,15 @@ public class Berkeley {
 
         try {
             cursor = db.openCursor(null, null);
-            key = new DatabaseEntry("DBM".getBytes("UTF-8"));
-            cursor.getSearchKey(key, data, LockMode.DEFAULT);
+            key = new DatabaseEntry("DBM1".getBytes("UTF-8"));
+            OperationStatus os = cursor.getSearchKey(key, data, LockMode.DEFAULT);
+            if (os != OperationStatus.NOTFOUND)
+                cursor.delete(null);
             data = new DatabaseEntry(serialize(DBManager.getDBManager()));
             cursor.put(key, data);
             cursor.close();
         } catch (Exception e) {
+            e.printStackTrace();
             cursor.close();
         }
     }
@@ -84,7 +88,7 @@ public class Berkeley {
 
         try {
             cursor = db.openCursor(null, null);
-            key = new DatabaseEntry("DBM".getBytes("UTF-8"));
+            key = new DatabaseEntry("DBM1".getBytes("UTF-8"));
             cursor.getSearchKey(key, data, LockMode.DEFAULT);
             DBManager m = (DBManager) deserialize(data.getData());
             cursor.close();
