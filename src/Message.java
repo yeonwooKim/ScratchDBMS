@@ -20,8 +20,13 @@ public class Message {
                     noSuchTable,
                     charLength,
                     select,
-                    insert,
-                    delete;
+                    insertSuccess,
+                    delete,
+                    insertTypeMismatch,
+                    insertColumnNonNullable,
+                    insertColumnExistence,
+                    insertDuplicatePrimaryKey,
+                    insertReferentialIntegrity;
 
     public static Message getSyntaxError() {
         if (syntaxError == null)
@@ -131,16 +136,46 @@ public class Message {
         return select;
     }
 
-    public static Message getInsert() {
-        if (insert == null)
-            insert = new Message(MessageName.INSERT);
-        return insert;
+    public static Message getInsertSuccess() {
+        if (insertSuccess == null)
+            insertSuccess = new Message(MessageName.INSERT_SUCCESS);
+        return insertSuccess;
     }
 
     public static Message getDelete() {
         if (delete == null)
             delete = new Message(MessageName.DELETE);
         return delete;
+    }
+
+    public static Message getInsertTypeMismatch() {
+        if (insertTypeMismatch == null)
+            insertTypeMismatch = new Message(MessageName.INSERT_TYPE_MISMATCH);
+        return insertTypeMismatch;
+    }
+
+    public static Message getInsertColumnNonNullable() {
+        if (insertColumnNonNullable == null)
+            insertColumnNonNullable = new Message(MessageName.INSERT_COLUMN_NON_NULLABLE);
+        return insertColumnNonNullable;
+    }
+
+    public static Message getInsertColumnExistence() {
+        if (insertColumnExistence == null)
+            insertColumnExistence = new Message(MessageName.INSERT_COLUMN_EXISTENCE);
+        return insertColumnExistence;
+    }
+
+    public static Message getInsertDuplicatePrimaryKey() {
+        if (insertDuplicatePrimaryKey == null)
+            insertDuplicatePrimaryKey = new Message(MessageName.INSERT_DUPLICATE_PRIMARY_KEY);
+        return insertDuplicatePrimaryKey;
+    }
+
+    public static Message getInsertReferentialIntegrity() {
+        if (insertReferentialIntegrity == null)
+            insertReferentialIntegrity = new Message(MessageName.INSERT_REFERENTIAL_INTEGRITY);
+        return insertReferentialIntegrity;
     }
 
     private MessageName messagename;

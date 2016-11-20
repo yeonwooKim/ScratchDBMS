@@ -10,6 +10,7 @@ public class MessagePrinter
     private static void dropTableFailed() {
         System.out.print("Drop table has failed: ");
     }
+    private static void insertionFailed() { System.out.print("Insertion has failed: "); }
     public static void printMessage(Message m)
     {
         MessageName q = m.getMessagename();
@@ -93,9 +94,30 @@ public class MessagePrinter
             case SELECT:
                 System.out.println("\'SELECT\' requested");
                 break;
-            case INSERT:
-                System.out.println("\'INSERT\' requested");
+            case INSERT_SUCCESS:
+                System.out.println("The row is inserted");
                 break;
+            case INSERT_DUPLICATE_PRIMARY_KEY:
+                insertionFailed();
+                System.out.println("Primary key duplication");
+                break;
+            case INSERT_REFERENTIAL_INTEGRITY:
+                insertionFailed();
+                System.out.println("Referential integrity violation");
+                break;
+            case INSERT_TYPE_MISMATCH:
+                insertionFailed();
+                System.out.println("Types are not matched");
+                break;
+            case INSERT_COLUMN_EXISTENCE:
+                insertionFailed();
+                System.out.println("\'[" + n + "]\' does not exist");
+                break;
+            case INSERT_COLUMN_NON_NULLABLE:
+                insertionFailed();
+                System.out.println("\'[" + n + "]\' is not nullable");
+                break;
+
             case DELETE:
                 System.out.println("\'DELETE\' requested");
                 break;

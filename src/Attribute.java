@@ -9,14 +9,15 @@ public class Attribute implements Serializable {
     private Type attrType;
     private String attrName;
     private boolean isPrimaryKey;
-    private boolean isForeignKey;
+    private int foreignKey;
     private boolean isNotNull;
+    private int index;
 
     public Attribute(Type attrType, String attrName) {
         this.attrType = attrType;
         this.attrName = attrName.toLowerCase();
         this.isNotNull = false;
-        this.isForeignKey = false;
+        this.foreignKey = -1;
         this.isPrimaryKey = false;
     }
 
@@ -37,12 +38,12 @@ public class Attribute implements Serializable {
         isNotNull = true;
     }
 
-    public boolean isForeignKey() {
-        return isForeignKey;
+    public int getForeignKey() {
+        return foreignKey;
     }
 
-    public void setForeignKey() {
-        isForeignKey = true;
+    public void setForeignKey(int f) {
+        foreignKey = f;
     }
 
     public boolean isNotNull() {
@@ -52,4 +53,8 @@ public class Attribute implements Serializable {
     public void setNotNull() {
         isNotNull = true;
     }
+
+    public void setIndex(int index) { this.index = index; }
+
+    public int getIndex() { return index; }
 }

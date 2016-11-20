@@ -1,5 +1,9 @@
+import javafx.util.Pair;
+
 import java.io.Serializable;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 
 /**
@@ -8,8 +12,8 @@ import java.util.Iterator;
 public class Table implements Serializable {
     private ArrayList<Attribute> attrList;
     private ArrayList<Table> referredList;
-    private ArrayList<Table> referringList;
-    private ArrayList<Attribute> primaryKey;
+    private ArrayList<Pair<Table, ArrayList<Integer>>> referringList;
+    private ArrayList<Integer> primaryKey;
     private String tableName;
 
     public Table(String tableName) {
@@ -28,9 +32,9 @@ public class Table implements Serializable {
         return referredList;
     }
 
-    public ArrayList<Table> getReferringList() { return referringList; }
+    public ArrayList<Pair<Table, ArrayList<Integer>>> getReferringList() { return referringList; }
 
-    public ArrayList<Attribute> getPrimaryKey() {
+    public ArrayList<Integer> getPrimaryKey() {
         return primaryKey;
     }
 
@@ -68,8 +72,9 @@ public class Table implements Serializable {
             Attribute nAttr = it2.next();
             nAttr.setPrimaryKey();
             nAttr.setNotNull();
-            primaryKey.add(nAttr);
+            primaryKey.add(attrList.indexOf(nAttr));
         }
+        Collections.sort(primaryKey);
         return null;
     }
 
@@ -99,9 +104,14 @@ public class Table implements Serializable {
         referredList.add(t);
     }
 
-    public void removeReferred(Table t) { referredList.remove(t); }
+    public void removeReferred(Table t) {
+        referredList.remove(t);
+    }
 
-    public void addReferring(Table t) { referringList.add(t); }
+    public void addReferring(Table t, ArrayList<Integer> arr) {
+        Pair<Table, ArrayList<Integer>> p = new Pair<>(t, arr);
+        referringList.add(p);
+    }
 
     public Message setForeignKey(ArrayList<String> foreignKey,
                                  Table table, ArrayList<String> reference) {
@@ -110,8 +120,11 @@ public class Table implements Serializable {
             return Message.getReferenceType();
         }
 
-        ArrayList<Attribute> prime = table.getPrimaryKey();
-        ArrayList<Attribute> aAttrList = new ArrayList<>();
+        ArrayList<Integer> prime = table.getPrimaryKey();
+        int size = prime.size();
+        ArrayList<Integer> indexList = new ArrayList<>(size);
+        for (int i = 0 ; i < size ; i ++)
+            indexList.add(-1);
         if (prime.size() != reference.size()) {
             return Message.getReferenceNonPrimaryKey();
         }
@@ -125,29 +138,27 @@ public class Table implements Serializable {
                 m.setNameArg(a);
                 return m;
             }
-            aAttrList.add(aAttr);
             String b = itReference.next();
             Attribute bAttr = table.findAttribute(b);
             if (bAttr == null) {
                 return Message.getReferenceColumnExistence();
             }
 
-            if (!prime.contains(bAttr)) {
+            if (!prime.contains(table.getAttrList().indexOf(bAttr))) {
                 return Message.getReferenceNonPrimaryKey();
             }
 
             if (aAttr.getAttributeType().compareTo(bAttr.getAttributeType()) != 0) {
                 return Message.getReferenceType();
             }
-        }
 
-        table.addReferred(this);
-        addReferring(table);
-        Iterator<Attribute> it = aAttrList.iterator();
-        while (it.hasNext()) {
-            it.next().setForeignKey();
+            aAttr.setForeignKey(referringList.size());
+            int pindex = table.getAttrList().indexOf(bAttr);
+            int index = prime.indexOf(pindex);
+            indexList.set(index, attrList.indexOf(aAttr));
         }
+        table.addReferred(this);
+        addReferring(table, indexList);
         return null;
     }
-
 }

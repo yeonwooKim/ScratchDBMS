@@ -1,3 +1,5 @@
+import javafx.util.Pair;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -54,14 +56,15 @@ public class DBManager implements Serializable {
         }
 
         if (t.getReferringList().size() != 0) {
-            ArrayList<Table> rt = t.getReferringList();
-            Iterator<Table> it = rt.iterator();
+            ArrayList<Pair<Table, ArrayList<Integer>>> rt = t.getReferringList();
+            Iterator<Pair<Table, ArrayList<Integer>>> it = rt.iterator();
             while (it.hasNext()) {
-                it.next().removeReferred(t);
+                it.next().getKey().removeReferred(t);
             }
         }
 
         tables.remove(t);
+        Berkeley.getBerkeley().removeTable(t.getTableName());
         m = Message.getDropSuccess();
         m.setNameArg(tablename);
         return m;
@@ -78,8 +81,8 @@ public class DBManager implements Serializable {
             Attribute n = it.next();
             char isNull = (n.isNotNull()) ? 'N' : 'Y';
             String key = (n.isPrimaryKey()) ?
-                    ((n.isForeignKey()) ? "PRI/FOR" : "PRI") :
-                    ((n.isForeignKey()) ? "FOR" : "");
+                    ((n.getForeignKey() != -1) ? "PRI/FOR" : "PRI") :
+                    ((n.getForeignKey() != -1) ? "FOR" : "");
             System.out.println(String.format(format, n.getAttributeName(),
                     n.getAttributeType().toString(),
                     isNull, key));

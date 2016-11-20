@@ -183,11 +183,8 @@ Message query() :
 		 }
 		 )
 	 | (
-		 insertQuery()
-		 {
-		 m = Message.getInsert();
-		 }
-		 )
+		 m = insertQuery()
+	    )
 	 | (
 			 deleteQuery()
 			 {
@@ -622,10 +619,26 @@ void compOperand() :
 		| tableColumn()
 }
 
-void comparableValue() :
-{}
+Value comparableValue() :
 {
-	< INT_VALUE > | < CHAR_STRING > | < DATE_VALUE >
+    Token t;
+    Integer i;
+    String cd;
+    Value v;
+}
+{
+	((t = < INT_VALUE > { i = new Integer(Integer.parseInt(t.toString()));
+	                     v = new Value(TypeName.INT);
+	                     v.setIntVal(i); })
+	|
+	(t = < CHAR_STRING > { cd = t.toString();
+	                       v = new Value(TypeName.CHAR);
+	                       v.setStringVal(cd); })
+	|
+	(t = < DATE_VALUE > { cd = t.toString();
+	                      v = new Value(TypeName.DATE);
+	                      v.setDateVal(cd); }))
+    { return v; }
 }
 
 void nullOperation() :
@@ -635,36 +648,95 @@ void nullOperation() :
 }
 
 /* insert statement */
-void insertQuery() :
-{}
+Message insertQuery() :
+{
+    Token t;
+    String tablename;
+    Message m = null;
+    Record rec = new Record();
+}
 {
 	< INSERT > < INTO >
-		< LEGAL_IDENT >
-		insertColumnsAndSource()
+		t = < LEGAL_IDENT >
+		{
+		    tablename = t.toString();
+		}
+		m = insertColumnsAndSource(tablename, rec)
 		< SEMICOLON >
+		{
+		    if (m == null) {
+		        Berkeley.getBerkeley().insertRecord(tablename, rec);
+		        m = Message.getInsertSuccess();
+		    }
+		    return m;
+		}
 }
 
-void insertColumnsAndSource() :
-{}
+Message insertColumnsAndSource(String tablename, Record rec) :
 {
-	( columnNameList() )?
-		valueList()
+    Message m = null;
+    ArrayList<String> arr = null;
+}
+{
+	( arr = columnNameList() )?
+		m = valueList(arr, tablename, rec)
+		{
+		    return m;
+		}
 }
 
-void valueList() :
-{}
+Message valueList(ArrayList<String> arr, String tablename, Record rec) :
 {
+    Message m = null;
+    ArrayList<Value> valArr = new ArrayList<Value>();
+    Value v;
+    boolean explicit = true;
+    Table table;
+}
+{
+    {
+        table = DBManager.getDBManager().findTable(tablename);
+        if (table == null)
+            m = Message.getNoSuchTable();
+        else if (arr != null)
+            m = Record.verifyColumnList(arr, table);
+    }
 	< VALUES >
 		< LEFT_PAREN >
-		value()
-		( < COMMA > value() )*
+		v = value()
+		{
+		    valArr.add(v);
+		}
+		( < COMMA > v = value()
+		 {
+		    valArr.add(v);
+		 }
+		 )*
 		< RIGHT_PAREN >
+		{
+		    if (m == null) {
+		        if (arr == null)
+		            explicit = false;
+                m = rec.addValues(explicit, valArr, table);
+		    }
+		    return m;
+		}
 }
 
-void value() :
-{}
+Value value() :
 {
-	< NULL > | comparableValue()
+    Value v;
+}
+{
+	((< NULL >
+	{
+	   v = new Value();
+	})
+	|
+	(v = comparableValue()))
+	{
+	    return v;
+	}
 }
 
 /* delete statement */

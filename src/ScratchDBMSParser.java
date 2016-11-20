@@ -132,8 +132,7 @@ m = Message.getSelect();
       break;
       }
     case INSERT:{
-      insertQuery();
-m = Message.getInsert();
+      m = insertQuery();
       break;
       }
     case DELETE:{
@@ -688,18 +687,30 @@ tablename = tok.toString();
     }
   }
 
-  static final public void comparableValue() throws ParseException {
+  static final public Value comparableValue() throws ParseException {Token t;
+    Integer i;
+    String cd;
+    Value v;
     switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
     case INT_VALUE:{
-      jj_consume_token(INT_VALUE);
+      t = jj_consume_token(INT_VALUE);
+i = new Integer(Integer.parseInt(t.toString()));
+                             v = new Value(TypeName.INT);
+                             v.setIntVal(i);
       break;
       }
     case CHAR_STRING:{
-      jj_consume_token(CHAR_STRING);
+      t = jj_consume_token(CHAR_STRING);
+cd = t.toString();
+                               v = new Value(TypeName.CHAR);
+                               v.setStringVal(cd);
       break;
       }
     case DATE_VALUE:{
-      jj_consume_token(DATE_VALUE);
+      t = jj_consume_token(DATE_VALUE);
+cd = t.toString();
+                              v = new Value(TypeName.DATE);
+                              v.setDateVal(cd);
       break;
       }
     default:
@@ -707,6 +718,8 @@ tablename = tok.toString();
       jj_consume_token(-1);
       throw new ParseException();
     }
+{if ("" != null) return v;}
+    throw new Error("Missing return statement in function");
   }
 
   static final public void nullOperation() throws ParseException {
@@ -724,31 +737,54 @@ tablename = tok.toString();
   }
 
 /* insert statement */
-  static final public void insertQuery() throws ParseException {
+  static final public Message insertQuery() throws ParseException {Token t;
+    String tablename;
+    Message m = null;
+    Record rec = new Record();
     jj_consume_token(INSERT);
     jj_consume_token(INTO);
-    jj_consume_token(LEGAL_IDENT);
-    insertColumnsAndSource();
+    t = jj_consume_token(LEGAL_IDENT);
+tablename = t.toString();
+    m = insertColumnsAndSource(tablename, rec);
     jj_consume_token(SEMICOLON);
+if (m == null) {
+                        Berkeley.getBerkeley().insertRecord(tablename, rec);
+                        m = Message.getInsertSuccess();
+                    }
+                    {if ("" != null) return m;}
+    throw new Error("Missing return statement in function");
   }
 
-  static final public void insertColumnsAndSource() throws ParseException {
+  static final public Message insertColumnsAndSource(String tablename, Record rec) throws ParseException {Message m = null;
+    ArrayList<String> arr = null;
     switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
     case LEFT_PAREN:{
-      columnNameList();
+      arr = columnNameList();
       break;
       }
     default:
       jj_la1[24] = jj_gen;
       ;
     }
-    valueList();
+    m = valueList(arr, tablename, rec);
+{if ("" != null) return m;}
+    throw new Error("Missing return statement in function");
   }
 
-  static final public void valueList() throws ParseException {
+  static final public Message valueList(ArrayList<String> arr, String tablename, Record rec) throws ParseException {Message m = null;
+    ArrayList<Value> valArr = new ArrayList<Value>();
+    Value v;
+    boolean explicit = true;
+    Table table;
+table = DBManager.getDBManager().findTable(tablename);
+        if (table == null)
+            m = Message.getNoSuchTable();
+        else if (arr != null)
+            m = Record.verifyColumnList(arr, table);
     jj_consume_token(VALUES);
     jj_consume_token(LEFT_PAREN);
-    value();
+    v = value();
+valArr.add(v);
     label_8:
     while (true) {
       switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
@@ -761,21 +797,30 @@ tablename = tok.toString();
         break label_8;
       }
       jj_consume_token(COMMA);
-      value();
+      v = value();
+valArr.add(v);
     }
     jj_consume_token(RIGHT_PAREN);
+if (m == null) {
+                        if (arr == null)
+                            explicit = false;
+                m = rec.addValues(explicit, valArr, table);
+                    }
+                    {if ("" != null) return m;}
+    throw new Error("Missing return statement in function");
   }
 
-  static final public void value() throws ParseException {
+  static final public Value value() throws ParseException {Value v;
     switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
     case NULL:{
       jj_consume_token(NULL);
+v = new Value();
       break;
       }
     case INT_VALUE:
     case DATE_VALUE:
     case CHAR_STRING:{
-      comparableValue();
+      v = comparableValue();
       break;
       }
     default:
@@ -783,6 +828,8 @@ tablename = tok.toString();
       jj_consume_token(-1);
       throw new ParseException();
     }
+{if ("" != null) return v;}
+    throw new Error("Missing return statement in function");
   }
 
 /* delete statement */

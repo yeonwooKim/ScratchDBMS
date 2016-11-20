@@ -5,6 +5,8 @@
 import com.sleepycat.je.*;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.Iterator;
 
 /* Berkeley class is in charge of opening, closing the berkely db,
    updating and retrieving database manager inside for each successful creation and drop
@@ -96,6 +98,80 @@ public class Berkeley {
         } catch (Exception e) {
             cursor.close();
             return null;
+        }
+    }
+
+    public void insertRecord(String tablename, Record rec) {
+        Cursor cursor = null;
+        DatabaseEntry key;
+        DatabaseEntry data;
+
+        try {
+            cursor = db.openCursor(null, null);
+            key = new DatabaseEntry(tablename.getBytes("UTF-8"));
+            data = new DatabaseEntry(serialize(rec));
+            cursor.put(key, data);
+            cursor.close();
+        } catch (Exception e) {
+            cursor.close();
+        }
+    }
+
+    private static boolean recordHasValue(DatabaseEntry data, ArrayList<Integer> index, ArrayList<Value> values) {
+        try {
+            Record rec = (Record) deserialize(data.getData());
+            Iterator<Integer> it = index.iterator();
+            int i = 0;
+            while (it.hasNext()) {
+                if (!values.get(i).equals(rec.getIndex(it.next())))
+                    return false;
+                i ++;
+            }
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public boolean tableHasRecord(String tablename, ArrayList<Integer> index, ArrayList<Value> values) {
+        Cursor cursor = null;
+        DatabaseEntry key;
+        DatabaseEntry data = new DatabaseEntry();
+
+        try {
+            cursor = db.openCursor(null, null);
+            key = new DatabaseEntry(tablename.getBytes("UTF-8"));
+            OperationStatus os = cursor.getSearchKey(key, data, LockMode.DEFAULT);
+            if (os == OperationStatus.NOTFOUND) {
+                cursor.close();
+                return false;
+            }
+            if (recordHasValue(data, index, values)) {
+                cursor.close();
+                return true;
+            }
+
+            while (cursor.get(key, data, Get.NEXT_DUP, null) != null) {
+                if (recordHasValue(data, index, values)) {
+                    cursor.close();
+                    return true;
+                }
+            }
+            cursor.close();
+            return false;
+        } catch (Exception e) {
+            cursor.close();
+            return false;
+        }
+    }
+
+    public void removeTable(String tablename) {
+        DatabaseEntry key;
+
+        try {
+            key = new DatabaseEntry(tablename.getBytes("UTF-8"));
+            db.delete(null, key);
+        } catch (Exception e) {
         }
     }
 }
