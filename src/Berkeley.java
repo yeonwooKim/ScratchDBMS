@@ -210,38 +210,54 @@ public class Berkeley {
         }
     }
 
-    private boolean deleteCascade(Table t, Record rec) {
+    private boolean isNonCascadeDeletable(Table t, Record rec) {
+        ArrayList<Table> r = t.getReferredList();
+        Iterator<Table> it = r.iterator();
+        Table refTable;
+        ArrayList<Integer> index;
+        ArrayList<Integer> primaryKey = t.getPrimaryKey();
+        ArrayList<Value> values = rec.getIndices(primaryKey);
+        while (it.hasNext()) {
+            refTable = it.next();
+            index = refTable.getForeignKey(t);
+            if (tableHasRecord(refTable.getTableName(), index, values)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void deleteCascade(Table t, Record rec) {
+        ArrayList<Table> r = t.getReferredList();
+        Iterator<Table> it = r.iterator();
+        Table refTable;
+        ArrayList<Integer> index;
+        ArrayList<Integer> primaryKey = t.getPrimaryKey();
+        ArrayList<Value> values = rec.getIndices(primaryKey);
+        while (it.hasNext()) {
+            refTable = it.next();
+            index = refTable.getForeignKey(t);
+            cascadeToNull(refTable.getTableName(), index, values);
+        }
+    }
+
+    private boolean isCascadable(Table t) {
         ArrayList<Table> r = t.getReferredList();
         Iterator<Table> it = r.iterator();
         Table refTable;
         ArrayList<Integer> index;
         ArrayList<Attribute> attr;
-        boolean nullable = true;
-        boolean ret = true;
-        ArrayList<Integer> primaryKey = t.getPrimaryKey();
-        ArrayList<Value> values = rec.getIndices(primaryKey);
         while (it.hasNext()) {
             refTable = it.next();
             index = refTable.getForeignKey(t);
             attr = refTable.getAttrList();
             Iterator<Integer> it2 = index.iterator();
             while (it2.hasNext()) {
-               nullable = (!attr.get(it2.next()).isNotNull()) && nullable;
-            }
-            if (!nullable) {
-                ret = ret && !tableHasRecord(refTable.getTableName(), index, values);
+                if (attr.get(it2.next()).isNotNull())
+                    return false;
             }
         }
-        
-        if (nullable) {
-            Iterator<Table> itTable = r.iterator();
-            while (itTable.hasNext()) {
-                refTable = it.next();
-                index = refTable.getForeignKey(t);
-                cascadeToNull(refTable.getTableName(), index, values);
-            }
-        }
-        return ret;
+        return true;
     }
 
     private void incrDeleteSuccess(Message m) {
@@ -261,6 +277,7 @@ public class Berkeley {
         if (t == null) {
             return new Message(MessageName.NO_SUCH_TABLE);
         }
+        boolean cascadable = isCascadable(t);
         Cursor cursor = null;
         DatabaseEntry key;
         DatabaseEntry data = new DatabaseEntry();
@@ -275,22 +292,36 @@ public class Berkeley {
             }
             rec = (Record) deserialize(data.getData());
             if (bve == null || bve.eval(t, rec)) {
-                if (deleteCascade(t, rec)) {
+                if (cascadable) {
+                    deleteCascade(t, rec);
                     incrDeleteSuccess(m);
                     cursor.delete();
                 }
-                else
-                    incrDeleteFailure(m);
-            }
-            while (cursor.get(key, data, Get.NEXT_DUP, null) != null) {
-                rec = (Record) deserialize(data.getData());
-                if (bve == null || bve.eval(t, rec)) {
-                    if (deleteCascade(t, rec)) {
+                else {
+                    if (isNonCascadeDeletable(t, rec)){
                         incrDeleteSuccess(m);
                         cursor.delete();
                     }
                     else
                         incrDeleteFailure(m);
+                }
+            }
+            while (cursor.get(key, data, Get.NEXT_DUP, null) != null) {
+                rec = (Record) deserialize(data.getData());
+                if (bve == null || bve.eval(t, rec)) {
+                    if (cascadable) {
+                        deleteCascade(t, rec);
+                        incrDeleteSuccess(m);
+                        cursor.delete();
+                    }
+                    else {
+                        if (isNonCascadeDeletable(t, rec)) {
+                            incrDeleteSuccess(m);
+                            cursor.delete();
+                        }
+                        else
+                            incrDeleteFailure(m);
+                    }
                 }
             }
             cursor.close();
