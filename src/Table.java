@@ -50,7 +50,7 @@ public class Table implements Serializable {
         Iterator<Attribute> it = attrList.iterator();
         while (it.hasNext()) {
             Attribute n = it.next();
-            if (attrName.equalsIgnoreCase(n.getAttributeName()) &&
+            if (attrName.equals(n.getAttributeName()) &&
                     (tableName == null || tableName.equals(n.getTablename()) || tableName.equals(n.getTableAlias())))
                 return true;
         }
@@ -62,7 +62,7 @@ public class Table implements Serializable {
         Iterator<Attribute> it = attrList.iterator();
         while (it.hasNext()) {
             Attribute n = it.next();
-            if (attrName.equalsIgnoreCase(n.getAttributeName()) &&
+            if (attrName.equals(n.getAttributeName()) &&
                     (tableName == null || tableName.equals(n.getTablename()) || tableName.equals(n.getTableAlias()))) {
                 if (attr == null)
                     attr = n;
@@ -77,7 +77,7 @@ public class Table implements Serializable {
         Iterator<Attribute> it = attrList.iterator();
         while (it.hasNext()) {
             Attribute n = it.next();
-            if (attrName.equalsIgnoreCase(n.getAttributeName()))
+            if (attrName.equals(n.getAttributeName()))
                 return n;
         }
         return null;
@@ -87,7 +87,7 @@ public class Table implements Serializable {
         Iterator<Attribute> it = attrList.iterator();
         while (it.hasNext()) {
             Attribute n = it.next();
-            if (alias.equalsIgnoreCase(n.getAlias()))
+            if (alias.equals(n.getAlias()))
                 return n;
         }
         return null;
@@ -131,7 +131,7 @@ public class Table implements Serializable {
         Iterator<Attribute> it = attrList.iterator();
         while (it.hasNext()) {
             Attribute n = it.next();
-            if (attrName.equalsIgnoreCase(n.getAttributeName()))
+            if (attrName.equals(n.getAttributeName()))
                 return true;
         }
         return false;

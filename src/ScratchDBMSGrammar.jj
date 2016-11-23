@@ -236,7 +236,7 @@ Message createTableQuery() :
 	< CREATE > < TABLE >
 		tok = < LEGAL_IDENT >
 		{
-		    tablename = tok.toString();
+		    tablename = tok.toString().toLowerCase();
 			t = DBManager.getDBManager().findTable(tablename);
 			if (t != null)
 			    m = new Message(MessageName.TABLE_EXISTENCE_ERROR);
@@ -350,7 +350,7 @@ Attribute columnDefinition(Table t) :
 	tok = < LEGAL_IDENT >
 		typ = dataType()
 		{
-		    columnname = tok.toString();
+		    columnname = tok.toString().toLowerCase();
 			attr = new Attribute(typ, columnname);
 		}
 	(
@@ -403,7 +403,7 @@ ArrayList<String> referentialConstraint(Table t) :
 		tok = < LEGAL_IDENT >
 		arr2 = columnNameList()
 		{
-		    tablename = tok.toString();
+		    tablename = tok.toString().toLowerCase();
 		    arr1.add(0,"1");
 		    arr1.add(1, tablename);
 		    arr1.add("2");
@@ -422,14 +422,14 @@ ArrayList<String> columnNameList() :
 	< LEFT_PAREN >
 		tok = < LEGAL_IDENT >
 		{
-		    s = tok.toString();
+		    s = tok.toString().toLowerCase();
 		    arr.add(s);
 		}
 		(
 		 < COMMA >
 		 tok = < LEGAL_IDENT >
 		 {
-		    s = tok.toString();
+		    s = tok.toString().toLowerCase();
 		    arr.add(s);
 		 }
 		)*
@@ -482,7 +482,7 @@ Message dropTableQuery() :
 		tok = < LEGAL_IDENT >
 		< SEMICOLON >
 		{
-		    tablename = tok.toString();
+		    tablename = tok.toString().toLowerCase();
 			m = DBManager.getDBManager().dropTable(tablename);
 			return m;
 		}
@@ -500,7 +500,7 @@ Message descQuery() :
 		tok = < LEGAL_IDENT >
 		< SEMICOLON >
 		{
-		    tablename = tok.toString();
+		    tablename = tok.toString().toLowerCase();
 		    m = new Message(MessageName.DESC_TABLE);
 		    m.setNameArg(tablename);
 			return m;
@@ -562,7 +562,7 @@ Pair<Pair<String, String>, String> selectedColumn() :
 {
 	tc = tableColumn()
 		( < AS > tok = < LEGAL_IDENT > {
-		    alias = tok.toString();
+		    alias = tok.toString().toLowerCase();
 		})?
 		{
 		    return new Pair<Pair<String, String>, String>(tc, alias);
@@ -700,10 +700,10 @@ Pair<String, String> referredTable() :
 }
 {
 	tok1 = < LEGAL_IDENT > {
-	    tablename = tok1.toString();
+	    tablename = tok1.toString().toLowerCase();
 	}
 		( < AS > tok2 = < LEGAL_IDENT >  {
-		    alias = tok2.toString();
+		    alias = tok2.toString().toLowerCase();
 		})?
 
 		{
@@ -944,7 +944,7 @@ Value comparableValue() :
 	|
 	(t = < CHAR_STRING > { cd = t.toString();
 	                       v = new Value(TypeName.CHAR);
-	                       v.setStringVal(cd); })
+	                       v.setStringVal(cd.substring(1, cd.length() - 1)); })
 	|
 	(t = < DATE_VALUE > { cd = t.toString();
 	                      v = new Value(TypeName.DATE);
@@ -978,7 +978,7 @@ Message insertQuery() :
 	< INSERT > < INTO >
 		t = < LEGAL_IDENT >
 		{
-		    tablename = t.toString();
+		    tablename = t.toString().toLowerCase();
 		}
 		m = insertColumnsAndSource(tablename, rec)
 		< SEMICOLON >
@@ -1069,7 +1069,7 @@ Message deleteQuery() :
 }
 {
 	< DELETE > < FROM > tok = < LEGAL_IDENT > {
-	   tablename = tok.toString();
+	   tablename = tok.toString().toLowerCase();
 	}
 		( m = whereClause(bve, tablename) )?
 	< SEMICOLON >
@@ -1096,12 +1096,12 @@ Pair<String, String> tableColumn() :
 {
 	tok1 = < LEGAL_IDENT >
 		( < PERIOD > tok2 = < LEGAL_IDENT > {
-		   tablename = tok1.toString();
-		   columnname = tok2.toString();
+		   tablename = tok1.toString().toLowerCase();
+		   columnname = tok2.toString().toLowerCase();
 		})?
 		{
 		    if (tablename == null) {
-		        columnname = tok1.toString();
+		        columnname = tok1.toString().toLowerCase();
 		    }
 
             return new Pair<String, String>(tablename, columnname);

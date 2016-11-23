@@ -187,7 +187,7 @@ if (m.getMessagename() == MessageName.DROP_SUCCESS)
     jj_consume_token(CREATE);
     jj_consume_token(TABLE);
     tok = jj_consume_token(LEGAL_IDENT);
-tablename = tok.toString();
+tablename = tok.toString().toLowerCase();
                         t = DBManager.getDBManager().findTable(tablename);
                         if (t != null)
                             m = new Message(MessageName.TABLE_EXISTENCE_ERROR);
@@ -303,7 +303,7 @@ if (attr != null)
         Attribute attr;
     tok = jj_consume_token(LEGAL_IDENT);
     typ = dataType();
-columnname = tok.toString();
+columnname = tok.toString().toLowerCase();
                         attr = new Attribute(typ, columnname);
     switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
     case NOT:{
@@ -358,7 +358,7 @@ arr.add(0,"0");
     jj_consume_token(REFERENCES);
     tok = jj_consume_token(LEGAL_IDENT);
     arr2 = columnNameList();
-tablename = tok.toString();
+tablename = tok.toString().toLowerCase();
                     arr1.add(0,"1");
                     arr1.add(1, tablename);
                     arr1.add("2");
@@ -372,7 +372,7 @@ tablename = tok.toString();
     String s;
     jj_consume_token(LEFT_PAREN);
     tok = jj_consume_token(LEGAL_IDENT);
-s = tok.toString();
+s = tok.toString().toLowerCase();
                     arr.add(s);
     label_3:
     while (true) {
@@ -387,7 +387,7 @@ s = tok.toString();
       }
       jj_consume_token(COMMA);
       tok = jj_consume_token(LEGAL_IDENT);
-s = tok.toString();
+s = tok.toString().toLowerCase();
                     arr.add(s);
     }
     jj_consume_token(RIGHT_PAREN);
@@ -437,7 +437,7 @@ t = new Type(TypeName.DATE, -1);
     jj_consume_token(TABLE);
     tok = jj_consume_token(LEGAL_IDENT);
     jj_consume_token(SEMICOLON);
-tablename = tok.toString();
+tablename = tok.toString().toLowerCase();
                         m = DBManager.getDBManager().dropTable(tablename);
                         {if ("" != null) return m;}
     throw new Error("Missing return statement in function");
@@ -450,7 +450,7 @@ tablename = tok.toString();
     jj_consume_token(DESC);
     tok = jj_consume_token(LEGAL_IDENT);
     jj_consume_token(SEMICOLON);
-tablename = tok.toString();
+tablename = tok.toString().toLowerCase();
                     m = new Message(MessageName.DESC_TABLE);
                     m.setNameArg(tablename);
                         {if ("" != null) return m;}
@@ -521,7 +521,7 @@ arr.add(p);
     case AS:{
       jj_consume_token(AS);
       tok = jj_consume_token(LEGAL_IDENT);
-alias = tok.toString();
+alias = tok.toString().toLowerCase();
       break;
       }
     default:
@@ -661,12 +661,12 @@ arr.add(p);
     String tablename = null;
     String alias = null;
     tok1 = jj_consume_token(LEGAL_IDENT);
-tablename = tok1.toString();
+tablename = tok1.toString().toLowerCase();
     switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
     case AS:{
       jj_consume_token(AS);
       tok2 = jj_consume_token(LEGAL_IDENT);
-alias = tok2.toString();
+alias = tok2.toString().toLowerCase();
       break;
       }
     default:
@@ -941,7 +941,7 @@ i = new Integer(Integer.parseInt(t.toString()));
       t = jj_consume_token(CHAR_STRING);
 cd = t.toString();
                                v = new Value(TypeName.CHAR);
-                               v.setStringVal(cd);
+                               v.setStringVal(cd.substring(1, cd.length() - 1));
       break;
       }
     case DATE_VALUE:{
@@ -987,7 +987,7 @@ if (tok == null)
     jj_consume_token(INSERT);
     jj_consume_token(INTO);
     t = jj_consume_token(LEGAL_IDENT);
-tablename = t.toString();
+tablename = t.toString().toLowerCase();
     m = insertColumnsAndSource(tablename, rec);
     jj_consume_token(SEMICOLON);
 if (m == null) {
@@ -1084,7 +1084,7 @@ v = new Value();
     jj_consume_token(DELETE);
     jj_consume_token(FROM);
     tok = jj_consume_token(LEGAL_IDENT);
-tablename = tok.toString();
+tablename = tok.toString().toLowerCase();
     switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
     case WHERE:{
       m = whereClause(bve, tablename);
@@ -1116,8 +1116,8 @@ if (m == null) {
     case PERIOD:{
       jj_consume_token(PERIOD);
       tok2 = jj_consume_token(LEGAL_IDENT);
-tablename = tok1.toString();
-                   columnname = tok2.toString();
+tablename = tok1.toString().toLowerCase();
+                   columnname = tok2.toString().toLowerCase();
       break;
       }
     default:
@@ -1125,7 +1125,7 @@ tablename = tok1.toString();
       ;
     }
 if (tablename == null) {
-                        columnname = tok1.toString();
+                        columnname = tok1.toString().toLowerCase();
                     }
 
             {if ("" != null) return new Pair<String, String>(tablename, columnname);}

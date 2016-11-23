@@ -32,7 +32,7 @@ public class DBManager implements Serializable {
         Iterator<Table> it = tables.iterator();
         while (it.hasNext()) {
             Table n = it.next();
-            if (n.getTableName().equalsIgnoreCase(tablename))
+            if (n.getTableName().equals(tablename))
                 return n;
         }
         return null;
@@ -42,7 +42,7 @@ public class DBManager implements Serializable {
         Iterator<Table> it = tables.iterator();
         while (it.hasNext()) {
             Table n = it.next();
-            if (n.getAlias().equalsIgnoreCase(alias))
+            if (n.getAlias().equals(alias))
                 return n;
         }
         return null;
