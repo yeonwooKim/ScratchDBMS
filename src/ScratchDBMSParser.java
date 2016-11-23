@@ -36,6 +36,32 @@ class Buffer {
 }
 
         public class ScratchDBMSParser implements ScratchDBMSParserConstants {
+    private static Pair<Message, Attribute> getAttribute(Pair<String, String> tableColumn, String tablename) {
+        String tn = tableColumn.getKey();
+        String cn = tableColumn.getValue();
+
+        Table t = DBManager.getDBManager().findTable(tablename);
+        if (t == null)
+            return new Pair<Message, Attribute>(new Message(MessageName.NO_SUCH_TABLE), null);
+
+        Attribute attr = t.findAttributeAlias(cn);
+        if (tn == null && attr != null)
+            return new Pair<Message, Attribute>(null, attr);
+
+        if (tn != null && DBManager.getDBManager().findTable(tn) == null &&
+            DBManager.getDBManager().findTableAlias(tn) == null)
+            return new Pair<Message, Attribute>(new Message(MessageName.WHERE_TABLE_NOT_SPECIFIED), null);
+        if (t.hasAttribute(tn, cn)) {
+            attr = t.findAttribute(cn);
+            if (attr == null)
+                return new Pair<Message, Attribute>(new Message(MessageName.WHERE_AMBIGUOUS_REFERENCE), null);
+        }
+        else {
+            return new Pair<Message, Attribute>(new Message(MessageName.WHERE_COLUMN_NOT_EXIST), null);
+        }
+
+        return new Pair<Message, Attribute>(null, attr);
+    }
         public static void main(String args[]) throws ParseException
         {
             Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -128,8 +154,7 @@ if (m.getMessagename() == MessageName.DROP_SUCCESS)
       break;
       }
     case SELECT:{
-      selectQuery();
-m = new Message(MessageName.SELECT);
+      m = selectQuery();
       break;
       }
     case INSERT:{
@@ -442,21 +467,26 @@ tablename = tok.toString();
   }
 
 /* select statement */
-  static final public void selectQuery() throws ParseException {
+  static final public Message selectQuery() throws ParseException {ArrayList<Pair<Pair<String, String>, String>> arr;
+    Message m;
     jj_consume_token(SELECT);
-    selectList();
-    tableExpression();
-    jj_consume_token(SEMICOLON);
+    arr = selectList();
+    m = tableExpression(arr);
+{if ("" != null) return m;}
+    throw new Error("Missing return statement in function");
   }
 
-  static final public void selectList() throws ParseException {
+  static final public ArrayList<Pair<Pair<String, String>, String>> selectList() throws ParseException {ArrayList<Pair<Pair<String, String>, String>> arr = new ArrayList<Pair<Pair<String, String>, String>>();
+    Pair<Pair<String, String>, String> p;
     switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
     case ASTERISK:{
       jj_consume_token(ASTERISK);
+{if ("" != null) return null;}
       break;
       }
     case LEGAL_IDENT:{
-      selectedColumn();
+      p = selectedColumn();
+arr.add(p);
       label_4:
       while (true) {
         switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
@@ -469,7 +499,8 @@ tablename = tok.toString();
           break label_4;
         }
         jj_consume_token(COMMA);
-        selectedColumn();
+        p = selectedColumn();
+arr.add(p);
       }
       break;
       }
@@ -478,43 +509,134 @@ tablename = tok.toString();
       jj_consume_token(-1);
       throw new ParseException();
     }
+{if ("" != null) return arr;}
+    throw new Error("Missing return statement in function");
   }
 
-  static final public void selectedColumn() throws ParseException {String t = null;
-    tableColumn(t);
+  static final public Pair<Pair<String, String>, String> selectedColumn() throws ParseException {Pair<String, String> tc;
+    Token tok;
+    String alias = null;
+    tc = tableColumn();
     switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
     case AS:{
       jj_consume_token(AS);
-      jj_consume_token(LEGAL_IDENT);
+      tok = jj_consume_token(LEGAL_IDENT);
+alias = tok.toString();
       break;
       }
     default:
       jj_la1[11] = jj_gen;
       ;
     }
+{if ("" != null) return new Pair<Pair<String, String>, String>(tc, alias);}
+    throw new Error("Missing return statement in function");
   }
 
-  static final public void tableExpression() throws ParseException {String t = null;
-BooleanValueExpression bve = null;
-    fromClause();
+  static final public Message tableExpression(ArrayList<Pair<Pair<String, String>, String>> columns) throws ParseException {Message m = null;
+    Message m1 = null;
+    BooleanValueExpression bve = new BooleanValueExpression();
+    ArrayList<Pair<String, String>> tables;
+    Pair<String, String> table;
+    Table t;
+    Pair<Pair<String, String>, String> column;
+    String tablename, columnname, alias;
+    Attribute attr;
+    Table newTable = null;
+    String newTablename = "";
+    ArrayList<Attribute> newAttr = new ArrayList<Attribute>();
+    ArrayList<Integer> projection = new ArrayList<Integer>();
+    tables = fromClause();
+Iterator<Pair<String, String>> itTable = tables.iterator();
+            while (itTable.hasNext()) {
+                table = itTable.next();
+                t = DBManager.getDBManager().findTable(table.getKey());
+                if (t == null) {
+                     m = new Message(MessageName.SELECT_TABLE_EXISTENCE_ERROR);
+                     m.setNameArg(table.getKey());
+                     break;
+                }
+            t.setAlias(table.getValue());
+            newAttr.addAll(t.getAttrList());
+            newTablename += table.getKey();
+            if (itTable.hasNext())
+                newTablename += "@";
+            }
+            if (tables.size() != 1) {
+            newTable = new Table(newAttr, newTablename);
+            DBManager.getDBManager().addTable(newTable);
+            }
+            else {
+                newTable = DBManager.getDBManager().findTable(newTablename);
+            }
+            if (m == null) {
+                if (columns == null) {
+                     projection = null;
+                }
+                else {
+                Iterator<Pair<Pair<String, String>, String>> itColumn = columns.iterator();
+                while (itColumn.hasNext()) {
+                    column = itColumn.next();
+                    tablename = column.getKey().getKey();
+                    columnname = column.getKey().getValue();
+                    alias = column.getValue();
+
+                    if (newTable.hasAttribute(tablename, columnname)) {
+                         attr = newTable.findAttribute(tablename, columnname);
+                         if (attr == null) {
+                            m = new Message(MessageName.SELECT_COLUMN_RESOLVE_ERROR);
+                            m.setNameArg(columnname);
+                            break;
+                         }
+                    }
+                    else {
+                        m = new Message(MessageName.SELECT_COLUMN_RESOLVE_ERROR);
+                        m.setNameArg(columnname);
+                        break;
+                    }
+                    attr.setAlias(alias);
+                    projection.add(newTable.getAttrList().indexOf(attr));
+                }
+            }
+            }
     switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
     case WHERE:{
-      whereClause(bve, t);
+      m1 = whereClause(bve, newTablename);
+if (m == null)
+                        m = m1;
       break;
       }
     default:
       jj_la1[12] = jj_gen;
       ;
     }
+    jj_consume_token(SEMICOLON);
+if (m == null) {
+                if (bve.isEmpty()) {
+                    Berkeley.getBerkeley().select(newTablename, null, projection);
+                }
+                else {
+                    Berkeley.getBerkeley().select(newTablename, bve, projection);
+                }
+                m = new Message(MessageName.SELECT_SUCCESS);
+            }
+            if (tables.size() != 1) {
+                DBManager.getDBManager().dropTable(newTablename);
+            }
+            {if ("" != null) return m;}
+    throw new Error("Missing return statement in function");
   }
 
-  static final public void fromClause() throws ParseException {
+  static final public ArrayList<Pair<String, String>> fromClause() throws ParseException {ArrayList<Pair<String, String>> arr;
     jj_consume_token(FROM);
-    tableReferenceList();
+    arr = tableReferenceList();
+{if ("" != null) return arr;}
+    throw new Error("Missing return statement in function");
   }
 
-  static final public void tableReferenceList() throws ParseException {
-    referredTable();
+  static final public ArrayList<Pair<String, String>> tableReferenceList() throws ParseException {ArrayList<Pair<String, String>> arr = new ArrayList<Pair<String, String>>();
+    Pair<String, String> p;
+    p = referredTable();
+arr.add(p);
     label_5:
     while (true) {
       switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
@@ -527,22 +649,32 @@ BooleanValueExpression bve = null;
         break label_5;
       }
       jj_consume_token(COMMA);
-      referredTable();
+      p = referredTable();
+arr.add(p);
     }
+{if ("" != null) return arr;}
+    throw new Error("Missing return statement in function");
   }
 
-  static final public void referredTable() throws ParseException {
-    jj_consume_token(LEGAL_IDENT);
+  static final public Pair<String, String> referredTable() throws ParseException {Token tok1;
+    Token tok2;
+    String tablename = null;
+    String alias = null;
+    tok1 = jj_consume_token(LEGAL_IDENT);
+tablename = tok1.toString();
     switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
     case AS:{
       jj_consume_token(AS);
-      jj_consume_token(LEGAL_IDENT);
+      tok2 = jj_consume_token(LEGAL_IDENT);
+alias = tok2.toString();
       break;
       }
     default:
       jj_la1[14] = jj_gen;
       ;
     }
+{if ("" != null) return new Pair<String, String>(tablename, alias);}
+    throw new Error("Missing return statement in function");
   }
 
   static final public Message whereClause(BooleanValueExpression bve, String t) throws ParseException {Message m = null;
@@ -691,8 +823,10 @@ bte.setPredicate(pred);
     CompareOperation compOp;
     NullOperation nullOp;
     TypeName t1 = null, t2 = null;
-    p = tableColumn(t);
-m = p.getKey();
+    Pair<String, String> tc;
+    tc = tableColumn();
+p = getAttribute(tc, t);
+            m = p.getKey();
             attr = p.getValue();
             if (m == null) {
                 idPred.setID(attr);
@@ -707,7 +841,7 @@ if (m == null)
                     if (m == null) {
                 c = p1.getValue();
                 t2 = c.getTypename();
-                if (t1 != t2)
+                if (t2 != null && t1 != t2)
                     {if ("" != null) return new Message(MessageName.WHERE_INCOMPARABLE);}
                 operator = tok.toString();
                 compOp = new CompareOperation(c, operator);
@@ -749,7 +883,7 @@ m = p.getKey();
                     if (m == null) {
                         c = p.getValue();
                         t2 = c.getTypename();
-                        if (t1 != t2)
+                        if (t1 != null && t2 != null && t1 != t2)
                            {if ("" != null) return new Message(MessageName.WHERE_INCOMPARABLE);}
                 operator = tok.toString();
                 compOp = new CompareOperation(c, operator);
@@ -764,6 +898,7 @@ m = p.getKey();
     Pair<Message, Attribute> p;
     CompareOperand c = new CompareOperand();
     Message m = null;
+    Pair<String, String> tc;
     switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
     case INT_VALUE:
     case DATE_VALUE:
@@ -773,8 +908,9 @@ c.setValue(v);
       break;
       }
     case LEGAL_IDENT:{
-      p = tableColumn(t);
-m = p.getKey();
+      tc = tableColumn();
+p = getAttribute(tc, t);
+                   m = p.getKey();
                    if (m == null) {
                         c.setAttribute(p.getValue());
                    }
@@ -971,13 +1107,10 @@ if (m == null) {
     throw new Error("Missing return statement in function");
   }
 
-  static final public Pair<Message, Attribute> tableColumn(String t) throws ParseException {Message m;
-    Token tok1;
+  static final public Pair<String, String> tableColumn() throws ParseException {Token tok1;
     Token tok2;
     String tablename = null;
     String columnname = null;
-    Attribute attr;
-    Table table;
     tok1 = jj_consume_token(LEGAL_IDENT);
     switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
     case PERIOD:{
@@ -991,28 +1124,11 @@ tablename = tok1.toString();
       jj_la1[28] = jj_gen;
       ;
     }
-table = DBManager.getDBManager().findTable(t);
-                    if (table == null) {
-                m = new Message(MessageName.NO_SUCH_TABLE);
-                {if ("" != null) return new Pair<Message, Attribute>(m, null);}
-                    }
-
-                    if (tablename == null) {
+if (tablename == null) {
                         columnname = tok1.toString();
                     }
-            attr = table.findAttribute(columnname);
-            if (attr == null) {
-                m = new Message(MessageName.WHERE_COLUMN_NOT_EXIST);
-                {if ("" != null) return new Pair<Message, Attribute>(m, null);}
-            }
-            if (tablename != null) {
-                if (!t.equalsIgnoreCase(tablename)) {
-                   m = new Message(MessageName.WHERE_TABLE_NOT_SPECIFIED);
-                   {if ("" != null) return new Pair<Message, Attribute>(m, null);}
-                }
-            }
 
-            {if ("" != null) return new Pair<Message, Attribute>(null, attr);}
+            {if ("" != null) return new Pair<String, String>(tablename, columnname);}
     throw new Error("Missing return statement in function");
   }
 

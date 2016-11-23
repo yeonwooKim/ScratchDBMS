@@ -38,6 +38,16 @@ public class DBManager implements Serializable {
         return null;
     }
 
+    public Table findTableAlias(String alias) {
+        Iterator<Table> it = tables.iterator();
+        while (it.hasNext()) {
+            Table n = it.next();
+            if (n.getAlias().equalsIgnoreCase(alias))
+                return n;
+        }
+        return null;
+    }
+
     public void addTable(Table t) {
         tables.add(t);
     } // Called when CREATE TABLE requested

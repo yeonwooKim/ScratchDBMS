@@ -120,14 +120,10 @@ public class Berkeley {
     private static boolean recordHasValue(DatabaseEntry data, ArrayList<Integer> index, ArrayList<Value> values) {
         try {
             Record rec = (Record) deserialize(data.getData());
-            Iterator<Integer> it = index.iterator();
-            int i = 0;
-            while (it.hasNext()) {
-                if (!values.get(i).equals(rec.getIndex(it.next())))
-                    return false;
-                i ++;
-            }
-            return true;
+            ArrayList<Value> values1 = rec.getIndices(index);
+            if (values1.equals(values))
+                return true;
+            return false;
         } catch (Exception e) {
             return false;
         }
@@ -196,13 +192,21 @@ public class Berkeley {
                 return;
             }
             Record rec = (Record) deserialize(data.getData());
-            if (rec.getIndices(index).equals(values));
+            if (rec.getIndices(index).equals(values)) {
                 recordToNull(rec, index);
+                cursor.delete();
+                data = new DatabaseEntry(serialize(rec));
+                db.put(null, key, data);
+            }
 
             while (cursor.get(key, data, Get.NEXT_DUP, null) != null) {
                 rec = (Record) deserialize(data.getData());
-                if (rec.getIndices(index).equals(values))
+                if (rec.getIndices(index).equals(values)) {
                     recordToNull(rec, index);
+                    cursor.delete();
+                    data = new DatabaseEntry(serialize(rec));
+                    db.put(null, key, data);
+                }
             }
             cursor.close();
         } catch (Exception e) {
@@ -330,6 +334,77 @@ public class Berkeley {
             e.printStackTrace();
             cursor.close();
             return null;
+        }
+    }
+
+    private boolean incrCursor(String[] tables, ArrayList<Cursor> cursors, ArrayList<DatabaseEntry> datas, int size) {
+        DatabaseEntry key = new DatabaseEntry(), data = new DatabaseEntry();
+        if (cursors.get(size - 1).get(key, data, Get.NEXT_DUP, null) != null) {
+            datas.set(size - 1, data);
+            return true;
+        }
+        else {
+            if (size  == 1) {
+                return false;
+            }
+            else {
+                try {
+                    key = new DatabaseEntry(tables[size - 1].getBytes("UTF-8"));
+                    cursors.get(size - 1).getSearchKey(key, data, LockMode.DEFAULT);
+                    datas.set(size - 1, data);
+                    return incrCursor(tables, cursors, datas, size - 1);
+                } catch (Exception e) {
+                    return false;
+                }
+            }
+        }
+    }
+
+    public void select(String tablename, BooleanValueExpression bve, ArrayList<Integer> projection) {
+        String[] tables = tablename.split("@");
+        ArrayList<Cursor> cursors = new ArrayList<>();
+        ArrayList<DatabaseEntry> datas = new ArrayList<>();
+        try {
+            for (int i = 0; i < tables.length; i++) {
+                Cursor cursor = db.openCursor(null, null);
+                DatabaseEntry key;
+                DatabaseEntry data = null;
+                key = new DatabaseEntry(tables[i].getBytes("UTF-8"));
+                data = new DatabaseEntry();
+                OperationStatus os = cursor.getSearchKey(key, data, LockMode.DEFAULT);
+                if (os != OperationStatus.SUCCESS) {
+                    throw new Exception();
+                }
+                cursors.add(cursor);
+                datas.add(data);
+            }
+            do {
+                ArrayList<Value> arr = new ArrayList<>();
+                Iterator<DatabaseEntry> it = datas.iterator();
+                while (it.hasNext()) {
+                    Record rec = (Record) deserialize(it.next().getData());
+                    arr.addAll(rec.getValues());
+                }
+                Record newRecord = new Record(arr);
+                if (bve == null || bve.eval(DBManager.getDBManager().findTable(tablename), newRecord)) {
+                    //TODO: print these values
+                    ArrayList<Value> res = (projection == null) ? newRecord.getValues() : newRecord.getIndices(projection);
+                    Iterator<Value> itPrint = res.iterator();
+                    while (itPrint.hasNext()) {
+                        itPrint.next().print();
+                    }
+                    System.out.println();
+                }
+            } while(incrCursor(tables, cursors, datas, tables.length));
+            Iterator<Cursor> it = cursors.iterator();
+            while (it.hasNext()) {
+                it.next().close();
+            }
+        } catch (Exception e) {
+            Iterator<Cursor> it = cursors.iterator();
+            while (it.hasNext()) {
+                it.next().close();
+            }
         }
     }
 }

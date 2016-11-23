@@ -13,6 +13,10 @@ public class Record implements Serializable {
        values = new ArrayList<>();
     }
 
+    public Record(ArrayList<Value> values) {
+        this.values = values;
+    }
+
     public Value getIndex(int i) {
         return values.get(i);
     }
@@ -24,6 +28,10 @@ public class Record implements Serializable {
             ret.add(getIndex(it.next()));
         }
         return ret;
+    }
+
+    public ArrayList<Value> getValues() {
+        return values;
     }
 
     public void setIndex(int i, Value v) { values.set(i, v); }

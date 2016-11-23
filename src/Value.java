@@ -70,6 +70,7 @@ public class Value implements Serializable, Comparable<Value> {
         if (o instanceof Value) {
             Value v = (Value) o;
             if (v.getTypename() == typename) {
+                if (typename == null) return true;
                 switch (typename) {
                     case INT:
                         if (v.getIntVal().equals(intVal))
@@ -89,8 +90,31 @@ public class Value implements Serializable, Comparable<Value> {
         return false;
     }
 
+    public void print() {
+        if (typename == null) {
+            System.out.print("NULL ");
+            return;
+        }
+        switch(typename) {
+            case INT:
+                System.out.print(intVal + " ");
+                break;
+            case CHAR:
+                System.out.print(stringVal + " ");
+                break;
+            case DATE:
+                System.out.print(dateVal + " ");
+                break;
+        }
+    }
+
     @Override
     public int compareTo(Value o) {
+        if (typename == null) {
+            if (o.getTypename() == null)
+                return 0;
+            return -1;
+        }
         switch (typename) {
             case INT:
                 if (intVal > o.getIntVal())

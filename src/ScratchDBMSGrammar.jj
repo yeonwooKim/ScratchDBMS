@@ -44,6 +44,32 @@ class Buffer {
 
 	public class ScratchDBMSParser
 {
+    private static Pair<Message, Attribute> getAttribute(Pair<String, String> tableColumn, String tablename) {
+        String tn = tableColumn.getKey();
+        String cn = tableColumn.getValue();
+
+        Table t = DBManager.getDBManager().findTable(tablename);
+        if (t == null)
+            return new Pair<Message, Attribute>(new Message(MessageName.NO_SUCH_TABLE), null);
+
+        Attribute attr = t.findAttributeAlias(cn);
+        if (tn == null && attr != null)
+            return new Pair<Message, Attribute>(null, attr);
+
+        if (tn != null && DBManager.getDBManager().findTable(tn) == null &&
+            DBManager.getDBManager().findTableAlias(tn) == null)
+            return new Pair<Message, Attribute>(new Message(MessageName.WHERE_TABLE_NOT_SPECIFIED), null);
+        if (t.hasAttribute(tn, cn)) {
+            attr = t.findAttribute(cn);
+            if (attr == null)
+                return new Pair<Message, Attribute>(new Message(MessageName.WHERE_AMBIGUOUS_REFERENCE), null);
+        }
+        else {
+            return new Pair<Message, Attribute>(new Message(MessageName.WHERE_COLUMN_NOT_EXIST), null);
+        }
+
+        return new Pair<Message, Attribute>(null, attr);
+    }
 	public static void main(String args[]) throws ParseException
 	{
 	    Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -178,10 +204,7 @@ Message query() :
 		 m = descQuery()
 		 )
 	 | (
-		 selectQuery()
-		 {
-		 m = new Message(MessageName.SELECT);
-		 }
+		 m = selectQuery()
 		 )
 	 | (
 		 m = insertQuery()
@@ -496,56 +519,196 @@ Message showTablesQuery() :
 }
 
 /* select statement */
-void selectQuery() :
-{}
+Message selectQuery() :
+{
+    ArrayList<Pair<Pair<String, String>, String>> arr;
+    Message m;
+}
 {
 	< SELECT >
-		selectList()
-		tableExpression()
-	< SEMICOLON >
+		arr = selectList()
+		m = tableExpression(arr)
+	{
+	   return m;
+	}
 }
 
-void selectList() :
-{}
+ArrayList<Pair<Pair<String, String>, String>> selectList() :
 {
-	< ASTERISK >
-		|   selectedColumn()
-		( < COMMA > selectedColumn() )*
+    ArrayList<Pair<Pair<String, String>, String>> arr = new ArrayList<Pair<Pair<String, String>, String>>();
+    Pair<Pair<String, String>, String> p;
+}
+{
+	((< ASTERISK >
+	{
+	    return null;
+	})
+		|   (p = selectedColumn() {
+		    arr.add(p);
+		}
+		( < COMMA > p = selectedColumn() {
+		    arr.add(p);
+		})*)) {
+		    return arr;
+		}
 }
 
-void selectedColumn() :
-{String t = null;}
+Pair<Pair<String, String>, String> selectedColumn() :
 {
-	tableColumn(t)
-		( < AS > < LEGAL_IDENT > )?
+    Pair<String, String> tc;
+    Token tok;
+    String alias = null;
+}
+{
+	tc = tableColumn()
+		( < AS > tok = < LEGAL_IDENT > {
+		    alias = tok.toString();
+		})?
+		{
+		    return new Pair<Pair<String, String>, String>(tc, alias);
+		}
 }
 
-void tableExpression() :
-{String t = null;
-BooleanValueExpression bve = null;}
+Message tableExpression(ArrayList<Pair<Pair<String, String>, String>> columns) :
 {
-	fromClause()
-		( whereClause(bve, t) )?
+    Message m = null;
+    Message m1 = null;
+    BooleanValueExpression bve = new BooleanValueExpression();
+    ArrayList<Pair<String, String>> tables;
+    Pair<String, String> table;
+    Table t;
+    Pair<Pair<String, String>, String> column;
+    String tablename, columnname, alias;
+    Attribute attr;
+    Table newTable = null;
+    String newTablename = "";
+    ArrayList<Attribute> newAttr = new ArrayList<Attribute>();
+    ArrayList<Integer> projection = new ArrayList<Integer>();
+}
+{
+	tables = fromClause()
+	{
+	    Iterator<Pair<String, String>> itTable = tables.iterator();
+	    while (itTable.hasNext()) {
+	        table = itTable.next();
+	        t = DBManager.getDBManager().findTable(table.getKey());
+	        if (t == null) {
+	             m = new Message(MessageName.SELECT_TABLE_EXISTENCE_ERROR);
+	             m.setNameArg(table.getKey());
+	             break;
+	        }
+            t.setAlias(table.getValue());
+            newAttr.addAll(t.getAttrList());
+            newTablename += table.getKey();
+            if (itTable.hasNext())
+                newTablename += "@";
+	    }
+	    if (tables.size() != 1) {
+            newTable = new Table(newAttr, newTablename);
+            DBManager.getDBManager().addTable(newTable);
+	    }
+	    else {
+	        newTable = DBManager.getDBManager().findTable(newTablename);
+	    }
+	    if (m == null) {
+	        if (columns == null) {
+	             projection = null;
+	        }
+	        else {
+                Iterator<Pair<Pair<String, String>, String>> itColumn = columns.iterator();
+                while (itColumn.hasNext()) {
+                    column = itColumn.next();
+                    tablename = column.getKey().getKey();
+                    columnname = column.getKey().getValue();
+                    alias = column.getValue();
+
+                    if (newTable.hasAttribute(tablename, columnname)) {
+                         attr = newTable.findAttribute(tablename, columnname);
+                         if (attr == null) {
+                            m = new Message(MessageName.SELECT_COLUMN_RESOLVE_ERROR);
+                            m.setNameArg(columnname);
+                            break;
+                         }
+                    }
+                    else {
+                        m = new Message(MessageName.SELECT_COLUMN_RESOLVE_ERROR);
+                        m.setNameArg(columnname);
+                        break;
+                    }
+                    attr.setAlias(alias);
+                    projection.add(newTable.getAttrList().indexOf(attr));
+                }
+            }
+	    }
+	}
+		( m1 = whereClause(bve, newTablename) {
+		    if (m == null)
+		        m = m1;
+		})?
+        < SEMICOLON >
+		{
+            if (m == null) {
+                if (bve.isEmpty()) {
+                    Berkeley.getBerkeley().select(newTablename, null, projection);
+                }
+                else {
+                    Berkeley.getBerkeley().select(newTablename, bve, projection);
+                }
+                m = new Message(MessageName.SELECT_SUCCESS);
+            }
+            if (tables.size() != 1) {
+                DBManager.getDBManager().dropTable(newTablename);
+            }
+            return m;
+		}
 }
 
-void fromClause() :
-{}
+ArrayList<Pair<String, String>> fromClause() :
 {
-	< FROM > tableReferenceList()
+    ArrayList<Pair<String, String>> arr;
+}
+{
+	< FROM > arr = tableReferenceList()
+	{
+	    return arr;
+	}
 }
 
-void tableReferenceList() :
-{}
+ArrayList<Pair<String, String>> tableReferenceList() :
 {
-	referredTable()
-		( < COMMA > referredTable() )*
+    ArrayList<Pair<String, String>> arr = new ArrayList<Pair<String, String>>();
+    Pair<String, String> p;
+}
+{
+	p = referredTable() {
+	    arr.add(p);
+	}
+		( < COMMA > p = referredTable() {
+		    arr.add(p);
+		})*
+		{
+		    return arr;
+		}
 }
 
-void referredTable() :
-{}
+Pair<String, String> referredTable() :
 {
-	< LEGAL_IDENT >
-		( < AS > < LEGAL_IDENT > )?
+    Token tok1;
+    Token tok2;
+    String tablename = null;
+    String alias = null;
+}
+{
+	tok1 = < LEGAL_IDENT > {
+	    tablename = tok1.toString();
+	}
+		( < AS > tok2 = < LEGAL_IDENT >  {
+		    alias = tok2.toString();
+		})?
+
+		{
+		    return new Pair<String, String>(tablename, alias);
+		}
 }
 
 Message whereClause(BooleanValueExpression bve, String t) :
@@ -672,9 +835,11 @@ Message identifierPredicate(Predicate pred, String t) :
     CompareOperation compOp;
     NullOperation nullOp;
     TypeName t1 = null, t2 = null;
+    Pair<String, String> tc;
 }
 {
-	p = tableColumn(t) {
+	tc = tableColumn() {
+	    p = getAttribute(tc, t);
 	    m = p.getKey();
 	    attr = p.getValue();
 	    if (m == null) {
@@ -689,7 +854,7 @@ Message identifierPredicate(Predicate pred, String t) :
 		    if (m == null) {
                 c = p1.getValue();
                 t2 = c.getTypename();
-                if (t1 != t2)
+                if (t2 != null && t1 != t2)
                     return new Message(MessageName.WHERE_INCOMPARABLE);
                 operator = tok.toString();
                 compOp = new CompareOperation(c, operator);
@@ -730,7 +895,7 @@ Message constantPredicate(Predicate pred, String t) :
 		    if (m == null) {
 		        c = p.getValue();
 		        t2 = c.getTypename();
-		        if (t1 != t2)
+		        if (t1 != null && t2 != null && t1 != t2)
 		           return new Message(MessageName.WHERE_INCOMPARABLE);
                 operator = tok.toString();
                 compOp = new CompareOperation(c, operator);
@@ -747,12 +912,14 @@ Pair<Message, CompareOperand> compOperand(String t) :
     Pair<Message, Attribute> p;
     CompareOperand c = new CompareOperand();
     Message m = null;
+    Pair<String, String> tc;
 }
 {
 	((v = comparableValue() {
 	    c.setValue(v);
 	})
-		| (p = tableColumn(t)) {
+		| (tc = tableColumn()) {
+	        p = getAttribute(tc, t);
 		   m = p.getKey();
 		   if (m == null) {
 		        c.setAttribute(p.getValue());
@@ -919,15 +1086,12 @@ Message deleteQuery() :
 	}
 }
 
-Pair<Message, Attribute> tableColumn(String t) :
+Pair<String, String> tableColumn() :
 {
-    Message m;
     Token tok1;
     Token tok2;
     String tablename = null;
     String columnname = null;
-    Attribute attr;
-    Table table;
 }
 {
 	tok1 = < LEGAL_IDENT >
@@ -936,27 +1100,10 @@ Pair<Message, Attribute> tableColumn(String t) :
 		   columnname = tok2.toString();
 		})?
 		{
-		    table = DBManager.getDBManager().findTable(t);
-		    if (table == null) {
-                m = new Message(MessageName.NO_SUCH_TABLE);
-                return new Pair<Message, Attribute>(m, null);
-		    }
-
 		    if (tablename == null) {
 		        columnname = tok1.toString();
 		    }
-            attr = table.findAttribute(columnname);
-            if (attr == null) {
-                m = new Message(MessageName.WHERE_COLUMN_NOT_EXIST);
-                return new Pair<Message, Attribute>(m, null);
-            }
-            if (tablename != null) {
-                if (!t.equalsIgnoreCase(tablename)) {
-                   m = new Message(MessageName.WHERE_TABLE_NOT_SPECIFIED);
-                   return new Pair<Message, Attribute>(m, null);
-                }
-            }
 
-            return new Pair<Message, Attribute>(null, attr);
+            return new Pair<String, String>(tablename, columnname);
 		}
 }

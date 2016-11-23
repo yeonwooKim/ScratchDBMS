@@ -11,6 +11,9 @@ public class MessagePrinter
         System.out.print("Drop table has failed: ");
     }
     private static void insertionFailed() { System.out.print("Insertion has failed: "); }
+    private static void selectionFailed() {
+        System.out.print("Selection has failed: ");
+    }
     public static void printMessage(Message m)
     {
         MessageName q = m.getMessagename();
@@ -91,9 +94,17 @@ public class MessagePrinter
                 System.out.println("Char length should be over 0");
                 break;
 
-            case SELECT:
-                System.out.println("\'SELECT\' requested");
+            case SELECT_SUCCESS:
                 break;
+            case SELECT_COLUMN_RESOLVE_ERROR:
+                selectionFailed();
+                System.out.println("fail to resolve \'[" + n + "]\'");
+                break;
+            case SELECT_TABLE_EXISTENCE_ERROR:
+                selectionFailed();
+                System.out.println("\'[" + n + "]\' does not exist");
+                break;
+
             case INSERT_SUCCESS:
                 System.out.println("The row is inserted");
                 break;

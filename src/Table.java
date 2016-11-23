@@ -24,6 +24,14 @@ public class Table implements Serializable {
         primaryKey = new ArrayList<>();
     }
 
+    public Table(ArrayList<Attribute> attrList, String tableName) { //JOIN table constructor
+        this.attrList = attrList;
+        this.tableName = tableName;
+        referredList = new ArrayList<>();
+        referringList = new ArrayList<>();
+        primaryKey = new ArrayList<>();
+    }
+
     public ArrayList<Attribute> getAttrList() {
         return attrList;
     }
@@ -38,11 +46,48 @@ public class Table implements Serializable {
         return primaryKey;
     }
 
+    public boolean hasAttribute(String tableName, String attrName) { //JOIN table method
+        Iterator<Attribute> it = attrList.iterator();
+        while (it.hasNext()) {
+            Attribute n = it.next();
+            if (attrName.equalsIgnoreCase(n.getAttributeName()) &&
+                    (tableName == null || tableName.equals(n.getTablename()) || tableName.equals(n.getTableAlias())))
+                return true;
+        }
+        return false;
+    }
+
+    public Attribute findAttribute(String tableName, String attrName) { //JOIN table method
+        Attribute attr = null;
+        Iterator<Attribute> it = attrList.iterator();
+        while (it.hasNext()) {
+            Attribute n = it.next();
+            if (attrName.equalsIgnoreCase(n.getAttributeName()) &&
+                    (tableName == null || tableName.equals(n.getTablename()) || tableName.equals(n.getTableAlias()))) {
+                if (attr == null)
+                    attr = n;
+                else
+                    return null;
+            }
+        }
+        return attr;
+    }
+
     public Attribute findAttribute(String attrName) {
         Iterator<Attribute> it = attrList.iterator();
         while (it.hasNext()) {
             Attribute n = it.next();
             if (attrName.equalsIgnoreCase(n.getAttributeName()))
+                return n;
+        }
+        return null;
+    }
+
+    public Attribute findAttributeAlias(String alias) {
+        Iterator<Attribute> it = attrList.iterator();
+        while (it.hasNext()) {
+            Attribute n = it.next();
+            if (alias.equalsIgnoreCase(n.getAlias()))
                 return n;
         }
         return null;
@@ -176,6 +221,10 @@ public class Table implements Serializable {
 
     public void setAlias(String alias) {
         this.alias = alias;
+        Iterator<Attribute> it = attrList.iterator();
+        while (it.hasNext()) {
+            it.next().setTableAlias(alias);
+        }
     }
     public String getAlias() {
         return alias;
