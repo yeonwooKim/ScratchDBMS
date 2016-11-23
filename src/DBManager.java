@@ -46,11 +46,11 @@ public class DBManager implements Serializable {
         Message m;
         Table t = findTable(tablename);
         if (t == null) {
-            return Message.getNoSuchTable();
+            return new Message(MessageName.NO_SUCH_TABLE);
         }
 
         if (t.getReferredList().size() != 0) {
-            m = Message.getDropReferencedTable();
+            m = new Message(MessageName.DROP_REFERENCED_TABLE_ERROR);
             m.setNameArg(tablename);
             return m;
         }
@@ -65,7 +65,7 @@ public class DBManager implements Serializable {
 
         tables.remove(t);
         Berkeley.getBerkeley().removeTable(t.getTableName());
-        m = Message.getDropSuccess();
+        m = new Message(MessageName.DROP_SUCCESS);
         m.setNameArg(tablename);
         return m;
     }
@@ -92,7 +92,7 @@ public class DBManager implements Serializable {
     public Message descTable(String tablename) { // Called when DESC requested
         Table t = findTable(tablename);
         if (t == null) {
-            return Message.getNoSuchTable();
+            return new Message(MessageName.NO_SUCH_TABLE);
         }
 
         desc(t);
@@ -102,7 +102,7 @@ public class DBManager implements Serializable {
     public Message showTables() { // Called when SHOW TABLES requested
         Iterator<Table> it = tables.iterator();
         if (!it.hasNext()) {
-            return Message.getShowTablesNoTable();
+            return new Message(MessageName.SHOW_TABLES_NO_TABLE);
         }
         System.out.println("----------------");
         while (it.hasNext()) {

@@ -17,6 +17,17 @@ public class Record implements Serializable {
         return values.get(i);
     }
 
+    public ArrayList<Value> getIndices(ArrayList<Integer> arr) {
+        Iterator<Integer> it = arr.iterator();
+        ArrayList<Value> ret = new ArrayList<>();
+        while (it.hasNext()) {
+            ret.add(getIndex(it.next()));
+        }
+        return ret;
+    }
+
+    public void setIndex(int i, Value v) { values.set(i, v); }
+
     private static void addForeignKeyList(ArrayList<ArrayList<Value>> foreignKey, int index, Value v,
                                           int attrIndex, Table table) {
         if (index != -1) {
@@ -36,7 +47,7 @@ public class Record implements Serializable {
             p = itForeign.next();
             if (foreignKey.get(i) != null &&
                     !Berkeley.getBerkeley().tableHasRecord(p.getKey().getTableName(), p.getKey().getPrimaryKey(), foreignKey.get(i))) {
-                return Message.getInsertReferentialIntegrity();
+                return new Message(MessageName.INSERT_REFERENTIAL_INTEGRITY);
             }
             i ++;
         }
@@ -62,14 +73,14 @@ public class Record implements Serializable {
             while (it.hasNext()) {
                 attr = it.next();
                 if (!it2.hasNext()) {
-                    return Message.getInsertTypeMismatch();
+                    return new Message(MessageName.INSERT_TYPE_MISMATCH);
                 }
                 v = it2.next();
                 if (!v.isCompatible(attr.getAttributeType())) {
-                    return Message.getInsertTypeMismatch();
+                    return new Message(MessageName.INSERT_TYPE_MISMATCH);
                 }
                 if (attr.isNotNull() && v.isNull()) {
-                    Message m = Message.getInsertColumnNonNullable();
+                    Message m = new Message(MessageName.INSERT_COLUMN_NON_NULLABLE);
                     m.setNameArg(attr.getAttributeName());
                     return m;
                 }
@@ -82,7 +93,7 @@ public class Record implements Serializable {
                 i ++;
             }
             if (it2.hasNext()) {
-                return Message.getInsertTypeMismatch();
+                return new Message(MessageName.INSERT_TYPE_MISMATCH);
             }
         }
         else {
@@ -92,7 +103,7 @@ public class Record implements Serializable {
             while (it.hasNext()) {
                 attr = it.next();
                 if (attr.getIndex() == -1 && attr.isNotNull()) {
-                    Message m = Message.getInsertColumnNonNullable();
+                    Message m = new Message(MessageName.INSERT_COLUMN_NON_NULLABLE);
                     m.setNameArg(attr.getAttributeName());
                     return m;
                 }
@@ -106,10 +117,10 @@ public class Record implements Serializable {
                 else {
                     v = values.get(attr.getIndex());
                     if (!v.isCompatible(attr.getAttributeType())) {
-                        return Message.getInsertTypeMismatch();
+                        return new Message(MessageName.INSERT_TYPE_MISMATCH);
                     }
                     if (attr.isNotNull() && v.isNull()) {
-                        Message m = Message.getInsertColumnNonNullable();
+                        Message m = new Message(MessageName.INSERT_COLUMN_NON_NULLABLE);
                         m.setNameArg(attr.getAttributeName());
                         return m;
                     }
@@ -124,7 +135,7 @@ public class Record implements Serializable {
             }
         }
         if (Berkeley.getBerkeley().tableHasRecord(table.getTableName(), table.getPrimaryKey(), primaryKey)) {
-            return Message.getInsertDuplicatePrimaryKey();
+            return new Message(MessageName.INSERT_DUPLICATE_PRIMARY_KEY);
         }
         return checkReferentialConstraint(table, foreignKey);
     }
@@ -144,7 +155,7 @@ public class Record implements Serializable {
             s = it.next();
             Attribute attr = table.findAttribute(s);
             if (attr == null) {
-                Message m = Message.getInsertColumnExistence();
+                Message m = new Message(MessageName.INSERT_COLUMN_EXISTENCE);
                 m.setNameArg(s);
                 return m;
             }

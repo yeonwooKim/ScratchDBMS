@@ -3,7 +3,7 @@ import java.io.Serializable;
 /**
  * Created by yeonwoo_kim on 11/19/16.
  */
-public class Value implements Serializable {
+public class Value implements Serializable, Comparable<Value> {
     private TypeName typename;
     private boolean isNull;
     private Integer intVal;
@@ -87,5 +87,22 @@ public class Value implements Serializable {
             }
         }
         return false;
+    }
+
+    @Override
+    public int compareTo(Value o) {
+        switch (typename) {
+            case INT:
+                if (intVal > o.getIntVal())
+                    return 1;
+                else if (intVal < o.getIntVal())
+                    return -1;
+                return 0;
+            case CHAR:
+                return stringVal.compareTo(o.getStringVal());
+            case DATE:
+                return dateVal.compareTo(o.getDateVal());
+        }
+        return 0;
     }
 }

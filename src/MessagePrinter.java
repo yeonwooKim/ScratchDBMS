@@ -118,9 +118,27 @@ public class MessagePrinter
                 System.out.println("\'[" + n + "]\' is not nullable");
                 break;
 
-            case DELETE:
-                System.out.println("\'DELETE\' requested");
+            case DELETE_SUCCESS: {
+                String[] nums = n.split(" ");
+                int fail = Integer.parseInt(nums[1]);
+                System.out.println("[" + nums[0] + "] row(s) are deleted");
+                if (fail != 0)
+                    System.out.println("[" + nums[1] + "] row(s) are not deleted due to referential integrity");
                 break;
+            }
+            case WHERE_INCOMPARABLE:
+                System.out.println("Where clause try to compare incomparable values");
+                break;
+            case WHERE_TABLE_NOT_SPECIFIED:
+                System.out.println("Where clause try to reference tables which are not specified");
+                break;
+            case WHERE_COLUMN_NOT_EXIST:
+                System.out.println("Where clause try to reference non existing column");
+                break;
+            case WHERE_AMBIGUOUS_REFERENCE:
+                System.out.println("Where clause contains ambiguous reference");
+                break;
+
             default:
                 System.out.println("Syntax error");
                 break;

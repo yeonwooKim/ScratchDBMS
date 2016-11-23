@@ -12,6 +12,7 @@ public class Attribute implements Serializable {
     private int foreignKey;
     private boolean isNotNull;
     private int index;
+    private String tablename;
 
     public Attribute(Type attrType, String attrName) {
         this.attrType = attrType;
@@ -42,6 +43,8 @@ public class Attribute implements Serializable {
         return foreignKey;
     }
 
+    public String getTablename() { return tablename; }
+
     public void setForeignKey(int f) {
         foreignKey = f;
     }
@@ -55,6 +58,8 @@ public class Attribute implements Serializable {
     }
 
     public void setIndex(int index) { this.index = index; }
+
+    public void setTablename(String tablename) { this.tablename = tablename; }
 
     public int getIndex() { return index; }
 }

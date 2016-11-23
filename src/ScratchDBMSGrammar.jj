@@ -10,6 +10,7 @@ PARSER_BEGIN(ScratchDBMSParser)
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Iterator;
+import javafx.util.Pair;
 
 enum BufferName { DEFINITION, CONSTRAINT }
 
@@ -62,7 +63,7 @@ class Buffer {
 			}
 			catch (Exception e)
 			{
-				MessagePrinter.printMessage(Message.getSyntaxError());
+				MessagePrinter.printMessage(new Message(MessageName.SYNTAX_ERROR));
 				ScratchDBMSParser.ReInit(System.in);
 			}
 		}
@@ -179,17 +180,14 @@ Message query() :
 	 | (
 		 selectQuery()
 		 {
-		 m = Message.getSelect();
+		 m = new Message(MessageName.SELECT);
 		 }
 		 )
 	 | (
 		 m = insertQuery()
 	    )
 	 | (
-			 deleteQuery()
-			 {
-			 m = Message.getDelete();
-			 }
+			 m = deleteQuery()
 		 )
 	 | (
 			 m = showTablesQuery()
@@ -218,7 +216,7 @@ Message createTableQuery() :
 		    tablename = tok.toString();
 			t = DBManager.getDBManager().findTable(tablename);
 			if (t != null)
-			    m = Message.getTableExistence();
+			    m = new Message(MessageName.TABLE_EXISTENCE_ERROR);
 			t = new Table(tablename);
 		}
 	m1 = tableElementList(t)
@@ -228,7 +226,7 @@ Message createTableQuery() :
 	    if (m1 != null)
 	        return m1;
 	    DBManager.getDBManager().addTable(t);
-	    m = Message.getCreateTableSuccess();
+	    m = new Message(MessageName.CREATE_TABLE_SUCCESS);
 	    m.setNameArg(tablename);
 	    return m;
 	}
@@ -267,7 +265,7 @@ Message tableElementList(Table t) :
 	    while (it1.hasNext()) {
 	        Attribute attr = it1.next();
 	        if (!attr.getAttributeType().isValid()) {
-	            return Message.getCharLength();
+	            return new Message(MessageName.CHAR_LENGTH_ERROR);
 	        }
 	        m = t.addAttribute(attr);
 	        if (m != null)
@@ -291,7 +289,7 @@ Message tableElementList(Table t) :
 	            List<String> bList = arr.subList(index + 1, arr.size());
                 Table foreign_table = DBManager.getDBManager().findTable(tablename);
                 if (foreign_table == null)
-                    return Message.getReferenceTableExistence();
+                    return new Message(MessageName.REFERENCE_TABLE_EXISTENCE_ERROR);
                 else
                     m = t.setForeignKey(new ArrayList(aList), foreign_table, new ArrayList(bList));
                     if (m != null)
@@ -480,7 +478,7 @@ Message descQuery() :
 		< SEMICOLON >
 		{
 		    tablename = tok.toString();
-		    m = Message.getDescTable();
+		    m = new Message(MessageName.DESC_TABLE);
 		    m.setNameArg(tablename);
 			return m;
 		}
@@ -493,7 +491,7 @@ Message showTablesQuery() :
 	< SHOW > < TABLES >
 	< SEMICOLON >
 	{
-		return Message.getShowTables();
+		return new Message(MessageName.SHOW_TABLES);
 	}
 }
 
@@ -516,17 +514,18 @@ void selectList() :
 }
 
 void selectedColumn() :
-{}
+{String t = null;}
 {
-	tableColumn()
+	tableColumn(t)
 		( < AS > < LEGAL_IDENT > )?
 }
 
 void tableExpression() :
-{}
+{String t = null;
+BooleanValueExpression bve = null;}
 {
 	fromClause()
-		( whereClause() )?
+		( whereClause(bve, t) )?
 }
 
 void fromClause() :
@@ -549,74 +548,219 @@ void referredTable() :
 		( < AS > < LEGAL_IDENT > )?
 }
 
-void whereClause() :
-{}
+Message whereClause(BooleanValueExpression bve, String t) :
 {
-	< WHERE > booleanValueExpression()
+    Message m = null;
+}
+{
+	< WHERE > m = booleanValueExpression(bve, t)
+	{
+	    return m;
+	}
 }
 
-void booleanValueExpression() :
-{}
+Message booleanValueExpression(BooleanValueExpression b, String t) :
+{
+    Message m = null;
+    Message m1 = null;
+}
 {
 	/* eliminate left recursion */
-	booleanTerm() ( < OR > booleanTerm() )*
+	 m = booleanTerm(b, t)
+
+	  ( < OR > m1 = booleanTerm(b, t)
+	   {
+	        if (m == null) m = m1;
+	   }
+	   )*
+	   {
+	        return m;
+	   }
 }
 
-void booleanTerm() :
-{}
+Message booleanTerm(BooleanValueExpression b, String t) :
+{
+    Message m = null;
+    Message m1 = null;
+    BooleanTerm bt = new BooleanTerm();
+}
 {
 	/* eliminate left recursion */
-	booleanFactor() ( < AND > booleanFactor() )*
+	m = booleanFactor(bt, t)
+	 ( < AND > m1 = booleanFactor(bt, t)
+	  {
+	    if (m == null) m = m1;
+	  })*
+	  {
+	    b.addTerm(bt);
+	    return m;
+	  }
 }
 
-void booleanFactor() :
-{}
+Message booleanFactor(BooleanTerm bt, String t) :
 {
-	( < NOT > )?
-		booleanTest()
+    Message m = null;
+    Token tok = null;
+    BooleanFactor bf = new BooleanFactor();
 }
-
-void booleanTest() :
-{}
 {
-	predicate()
-		| parenthesizedBooleanExpression()
+	( tok = < NOT > )?
+		m = booleanTest(bf, t)
+		{
+		    if (tok != null)
+		        bf.setNot();
+		    bt.addFactor(bf);
+	        return m;
+		}
 }
 
-void parenthesizedBooleanExpression() :
-{}
+Message booleanTest(BooleanFactor bf, String t) :
 {
-	< LEFT_PAREN > booleanValueExpression() < RIGHT_PAREN >
+    Message m = null;
+    BooleanTest bte = new BooleanTest();
+}
+{
+	(m = predicate(bte, t)
+		| m = parenthesizedBooleanExpression(bte, t))
+	{
+	    bf.setTest(bte);
+	    return m;
+	}
 }
 
-void predicate() :
-{}
+Message parenthesizedBooleanExpression(BooleanTest bte, String t) :
+{
+    BooleanValueExpression bve = new BooleanValueExpression();
+    ParenthesizedBooleanExpression pbe;
+    Message m = null;
+}
+{
+	< LEFT_PAREN > m = booleanValueExpression(bve, t) < RIGHT_PAREN >
+	{
+        pbe = new ParenthesizedBooleanExpression(bve);
+        bte.setParen(pbe);
+        return m;
+	}
+}
+
+Message predicate(BooleanTest bte, String t) :
+{
+    Message m = null;
+    Predicate pred = new Predicate();
+}
 {
 	/* revised to remove lookahead */
-	identifierPredicate() | constantPredicate()
+	(m = identifierPredicate(pred, t)
+	 | m = constantPredicate(pred, t))
+	{
+	    bte.setPredicate(pred);
+	    return m;
+	}
 }
 
-void identifierPredicate() :
-{}
+Message identifierPredicate(Predicate pred, String t) :
 {
-	tableColumn()
-		( ( < COMP_OP > compOperand() )
-			| nullOperation() ) 
+    Message m = null;
+    IdentifierPredicate idPred = new IdentifierPredicate();
+    CompareOperand c;
+    Token tok;
+    String operator;
+    boolean b;
+    Pair <Message, Attribute> p;
+    Pair <Message, CompareOperand> p1;
+    Attribute attr;
+    CompareOperation compOp;
+    NullOperation nullOp;
+    TypeName t1 = null, t2 = null;
+}
+{
+	p = tableColumn(t) {
+	    m = p.getKey();
+	    attr = p.getValue();
+	    if (m == null) {
+	        idPred.setID(attr);
+	        t1 = attr.getAttributeType().getTypename();
+	    }
+	}
+		( ( tok = < COMP_OP >
+		 p1 = compOperand(t) {
+		    if (m == null)
+		        m = p1.getKey();
+		    if (m == null) {
+                c = p1.getValue();
+                t2 = c.getTypename();
+                if (t1 != t2)
+                    return new Message(MessageName.WHERE_INCOMPARABLE);
+                operator = tok.toString();
+                compOp = new CompareOperation(c, operator);
+                idPred.setCompOperation(compOp);
+            }
+		 })
+			| b = nullOperation() {
+		        nullOp = new NullOperation(b);
+			    idPred.setNullOperation(nullOp);
+			})
+			{
+			    pred.setIdPredicate(idPred);
+			    return m;
+			}
 }
 
-void constantPredicate() :
-{}
+Message constantPredicate(Predicate pred, String t) :
 {
-	comparableValue()
-		< COMP_OP >
-		compOperand()
+    Message m = null;
+    Value v;
+    Token tok;
+    String operator;
+    CompareOperand c;
+    Pair <Message, CompareOperand> p;
+    ConstantPredicate constPred = new ConstantPredicate();
+    CompareOperation compOp;
+    TypeName t1 = null, t2 = null;
+}
+{
+	v = comparableValue() {
+	    constPred.setConst(v);
+	    t1 = v.getTypename();
+	}
+		tok = < COMP_OP >
+		p = compOperand(t)
+		{
+		    m = p.getKey();
+		    if (m == null) {
+		        c = p.getValue();
+		        t2 = c.getTypename();
+		        if (t1 != t2)
+		           return new Message(MessageName.WHERE_INCOMPARABLE);
+                operator = tok.toString();
+                compOp = new CompareOperation(c, operator);
+                constPred.setCompOperation(compOp);
+	        }
+	        pred.setConstPredicate(constPred);
+	        return m;
+		}
 }
 
-void compOperand() :
-{}
+Pair<Message, CompareOperand> compOperand(String t) :
 {
-	comparableValue()
-		| tableColumn()
+    Value v;
+    Pair<Message, Attribute> p;
+    CompareOperand c = new CompareOperand();
+    Message m = null;
+}
+{
+	((v = comparableValue() {
+	    c.setValue(v);
+	})
+		| (p = tableColumn(t)) {
+		   m = p.getKey();
+		   if (m == null) {
+		        c.setAttribute(p.getValue());
+		   }
+		})
+		{
+		    return new Pair<Message, CompareOperand>(m, c);
+		}
 }
 
 Value comparableValue() :
@@ -641,10 +785,18 @@ Value comparableValue() :
     { return v; }
 }
 
-void nullOperation() :
-{}
+boolean nullOperation() :
 {
-	< IS > ( < NOT > )? < NULL >
+    Token tok = null;
+}
+{
+	< IS > ( tok = < NOT > )? < NULL >
+	{
+	   if (tok == null)
+	        return true;
+	   else
+	        return false;
+	}
 }
 
 /* insert statement */
@@ -666,7 +818,7 @@ Message insertQuery() :
 		{
 		    if (m == null) {
 		        Berkeley.getBerkeley().insertRecord(tablename, rec);
-		        m = Message.getInsertSuccess();
+		        m = new Message(MessageName.INSERT_SUCCESS);
 		    }
 		    return m;
 		}
@@ -697,7 +849,7 @@ Message valueList(ArrayList<String> arr, String tablename, Record rec) :
     {
         table = DBManager.getDBManager().findTable(tablename);
         if (table == null)
-            m = Message.getNoSuchTable();
+            m = new Message(MessageName.NO_SUCH_TABLE);
         else if (arr != null)
             m = Record.verifyColumnList(arr, table);
     }
@@ -740,17 +892,71 @@ Value value() :
 }
 
 /* delete statement */
-void deleteQuery() :
-{}
+Message deleteQuery() :
 {
-	< DELETE > < FROM > < LEGAL_IDENT >
-		( whereClause() )?
+    Token tok;
+    String tablename;
+    Table t;
+    BooleanValueExpression bve = new BooleanValueExpression();
+    Message m = null;
+}
+{
+	< DELETE > < FROM > tok = < LEGAL_IDENT > {
+	   tablename = tok.toString();
+	}
+		( m = whereClause(bve, tablename) )?
 	< SEMICOLON >
+	{
+	    if (m == null) {
+	        if (bve.isEmpty()) {
+	            m = Berkeley.getBerkeley().removeRecord(tablename, null);
+	        }
+	        else {
+	            m = Berkeley.getBerkeley().removeRecord(tablename, bve);
+	        }
+	    }
+	    return m;
+	}
 }
 
-void tableColumn() :
-{}
+Pair<Message, Attribute> tableColumn(String t) :
 {
-	< LEGAL_IDENT >
-		( < PERIOD > < LEGAL_IDENT > )?
+    Message m;
+    Token tok1;
+    Token tok2;
+    String tablename = null;
+    String columnname = null;
+    Attribute attr;
+    Table table;
+}
+{
+	tok1 = < LEGAL_IDENT >
+		( < PERIOD > tok2 = < LEGAL_IDENT > {
+		   tablename = tok1.toString();
+		   columnname = tok2.toString();
+		})?
+		{
+		    table = DBManager.getDBManager().findTable(t);
+		    if (table == null) {
+                m = new Message(MessageName.NO_SUCH_TABLE);
+                return new Pair<Message, Attribute>(m, null);
+		    }
+
+		    if (tablename == null) {
+		        columnname = tok1.toString();
+		    }
+            attr = table.findAttribute(columnname);
+            if (attr == null) {
+                m = new Message(MessageName.WHERE_COLUMN_NOT_EXIST);
+                return new Pair<Message, Attribute>(m, null);
+            }
+            if (tablename != null) {
+                if (!t.equalsIgnoreCase(tablename)) {
+                   m = new Message(MessageName.WHERE_TABLE_NOT_SPECIFIED);
+                   return new Pair<Message, Attribute>(m, null);
+                }
+            }
+
+            return new Pair<Message, Attribute>(null, attr);
+		}
 }

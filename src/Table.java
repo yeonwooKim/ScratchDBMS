@@ -1,7 +1,6 @@
 import javafx.util.Pair;
 
 import java.io.Serializable;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -15,6 +14,7 @@ public class Table implements Serializable {
     private ArrayList<Pair<Table, ArrayList<Integer>>> referringList;
     private ArrayList<Integer> primaryKey;
     private String tableName;
+    private String alias;
 
     public Table(String tableName) {
         this.tableName = tableName.toLowerCase();
@@ -51,7 +51,7 @@ public class Table implements Serializable {
     public Message setPrimaryKey(ArrayList<String> p) {
         // Set primary key, check all possible errors
         if (!primaryKey.isEmpty()) {
-            return Message.getDuplicatePrimaryKeyDef();
+            return new Message(MessageName.DUPLICATE_PRIMARY_KEY_DEF_ERROR);
         }
 
         Iterator<String> it = p.iterator();
@@ -60,7 +60,7 @@ public class Table implements Serializable {
             String n = it.next();
             Attribute nAttr = findAttribute(n);
             if (nAttr == null) {
-                Message m = Message.getNonExistingColumnDef();
+                Message m = new Message(MessageName.NON_EXISTING_COLUMN_DEF_ERROR);
                 m.setNameArg(n);
                return m;
             }
@@ -94,8 +94,9 @@ public class Table implements Serializable {
 
     public Message addAttribute(Attribute attr) {
         if (checkDuplicate(attr.getAttributeName())) {
-            return Message.getDuplicateColumnDef();
+            return new Message(MessageName.DUPLICATE_COLUMN_DEF_ERROR);
         }
+        attr.setTablename(tableName);
         attrList.add(attr);
         return null;
     }
@@ -113,11 +114,22 @@ public class Table implements Serializable {
         referringList.add(p);
     }
 
+    public ArrayList<Integer> getForeignKey(Table t) {
+        Iterator<Pair<Table, ArrayList<Integer>>> it = referringList.iterator();
+        Pair<Table, ArrayList<Integer>> p;
+        while (it.hasNext()) {
+            p = it.next();
+            if (p.getKey() == t)
+                return p.getValue();
+        }
+        return null;
+    }
+
     public Message setForeignKey(ArrayList<String> foreignKey,
                                  Table table, ArrayList<String> reference) {
         // Set foreign key, check all possible errors
         if (foreignKey.size() != reference.size()) {
-            return Message.getReferenceType();
+            return new Message(MessageName.REFERENCE_TYPE_ERROR);
         }
 
         ArrayList<Integer> prime = table.getPrimaryKey();
@@ -126,7 +138,7 @@ public class Table implements Serializable {
         for (int i = 0 ; i < size ; i ++)
             indexList.add(-1);
         if (prime.size() != reference.size()) {
-            return Message.getReferenceNonPrimaryKey();
+            return new Message(MessageName.REFERENCE_NON_PRIMARY_KEY_ERROR);
         }
         Iterator<String> itForeign = foreignKey.iterator();
         Iterator<String> itReference = reference.iterator();
@@ -134,22 +146,22 @@ public class Table implements Serializable {
             String a = itForeign.next();
             Attribute aAttr = findAttribute(a);
             if (aAttr == null) {
-                Message m = Message.getNonExistingColumnDef();
+                Message m = new Message(MessageName.NON_EXISTING_COLUMN_DEF_ERROR);
                 m.setNameArg(a);
                 return m;
             }
             String b = itReference.next();
             Attribute bAttr = table.findAttribute(b);
             if (bAttr == null) {
-                return Message.getReferenceColumnExistence();
+                return new Message(MessageName.REFERENCE_COLUMN_EXISTENCE_ERROR);
             }
 
             if (!prime.contains(table.getAttrList().indexOf(bAttr))) {
-                return Message.getReferenceNonPrimaryKey();
+                return new Message(MessageName.REFERENCE_NON_PRIMARY_KEY_ERROR);
             }
 
             if (aAttr.getAttributeType().compareTo(bAttr.getAttributeType()) != 0) {
-                return Message.getReferenceType();
+                return new Message(MessageName.REFERENCE_TYPE_ERROR);
             }
 
             aAttr.setForeignKey(referringList.size());
@@ -160,5 +172,12 @@ public class Table implements Serializable {
         table.addReferred(this);
         addReferring(table, indexList);
         return null;
+    }
+
+    public void setAlias(String alias) {
+        this.alias = alias;
+    }
+    public String getAlias() {
+        return alias;
     }
 }

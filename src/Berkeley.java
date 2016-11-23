@@ -174,4 +174,131 @@ public class Berkeley {
         } catch (Exception e) {
         }
     }
+
+    private void recordToNull(Record rec, ArrayList<Integer> index) {
+        Iterator<Integer> it = index.iterator();
+        while (it.hasNext()) {
+            rec.setIndex(it.next(), new Value());
+        }
+    }
+
+    private void cascadeToNull(String tablename, ArrayList<Integer> index, ArrayList<Value> values) {
+        Cursor cursor = null;
+        DatabaseEntry key;
+        DatabaseEntry data = new DatabaseEntry();
+
+        try {
+            cursor = db.openCursor(null, null);
+            key = new DatabaseEntry(tablename.getBytes("UTF-8"));
+            OperationStatus os = cursor.getSearchKey(key, data, LockMode.DEFAULT);
+            if (os == OperationStatus.NOTFOUND) {
+                cursor.close();
+                return;
+            }
+            Record rec = (Record) deserialize(data.getData());
+            if (rec.getIndices(index).equals(values));
+                recordToNull(rec, index);
+
+            while (cursor.get(key, data, Get.NEXT_DUP, null) != null) {
+                rec = (Record) deserialize(data.getData());
+                if (rec.getIndices(index).equals(values))
+                    recordToNull(rec, index);
+            }
+            cursor.close();
+        } catch (Exception e) {
+            cursor.close();
+        }
+    }
+
+    private boolean deleteCascade(Table t, Record rec) {
+        ArrayList<Table> r = t.getReferredList();
+        Iterator<Table> it = r.iterator();
+        Table refTable;
+        ArrayList<Integer> index;
+        ArrayList<Attribute> attr;
+        boolean nullable = true;
+        boolean ret = true;
+        ArrayList<Integer> primaryKey = t.getPrimaryKey();
+        ArrayList<Value> values = rec.getIndices(primaryKey);
+        while (it.hasNext()) {
+            refTable = it.next();
+            index = refTable.getForeignKey(t);
+            attr = refTable.getAttrList();
+            Iterator<Integer> it2 = index.iterator();
+            while (it2.hasNext()) {
+               nullable = (!attr.get(it2.next()).isNotNull()) && nullable;
+            }
+            if (!nullable) {
+                ret = ret && !tableHasRecord(refTable.getTableName(), index, values);
+            }
+        }
+        
+        if (nullable) {
+            Iterator<Table> itTable = r.iterator();
+            while (itTable.hasNext()) {
+                refTable = it.next();
+                index = refTable.getForeignKey(t);
+                cascadeToNull(refTable.getTableName(), index, values);
+            }
+        }
+        return ret;
+    }
+
+    private void incrDeleteSuccess(Message m) {
+        String[] nums = m.getNameArg().split(" ");
+        m.setNameArg(Integer.toString(Integer.parseInt(nums[0]) + 1) + " " + nums[1]);
+    }
+
+    private void incrDeleteFailure(Message m) {
+        String[] nums = m.getNameArg().split(" ");
+        m.setNameArg(nums[0] + " " + Integer.toString(Integer.parseInt(nums[1]) + 1));
+    }
+
+    public Message removeRecord(String tablename, BooleanValueExpression bve) {
+        Message m = new Message(MessageName.DELETE_SUCCESS);
+        m.setNameArg("0 0");
+        Table t = DBManager.getDBManager().findTable(tablename);
+        if (t == null) {
+            return new Message(MessageName.NO_SUCH_TABLE);
+        }
+        Cursor cursor = null;
+        DatabaseEntry key;
+        DatabaseEntry data = new DatabaseEntry();
+        Record rec;
+        try {
+            cursor = db.openCursor(null, null);
+            key = new DatabaseEntry(tablename.getBytes("UTF-8"));
+            OperationStatus os = cursor.getSearchKey(key, data, LockMode.DEFAULT);
+            if (os == OperationStatus.NOTFOUND) {
+                cursor.close();
+                return m;
+            }
+            rec = (Record) deserialize(data.getData());
+            if (bve == null || bve.eval(t, rec)) {
+                if (deleteCascade(t, rec)) {
+                    incrDeleteSuccess(m);
+                    cursor.delete();
+                }
+                else
+                    incrDeleteFailure(m);
+            }
+            while (cursor.get(key, data, Get.NEXT_DUP, null) != null) {
+                rec = (Record) deserialize(data.getData());
+                if (bve == null || bve.eval(t, rec)) {
+                    if (deleteCascade(t, rec)) {
+                        incrDeleteSuccess(m);
+                        cursor.delete();
+                    }
+                    else
+                        incrDeleteFailure(m);
+                }
+            }
+            cursor.close();
+            return m;
+        } catch (Exception e) {
+            e.printStackTrace();
+            cursor.close();
+            return null;
+        }
+    }
 }

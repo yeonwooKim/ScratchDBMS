@@ -3,6 +3,7 @@
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Iterator;
+import javafx.util.Pair;
 
 enum BufferName { DEFINITION, CONSTRAINT }
 
@@ -54,7 +55,7 @@ class Buffer {
                         }
                         catch (Exception e)
                         {
-                                MessagePrinter.printMessage(Message.getSyntaxError());
+                                MessagePrinter.printMessage(new Message(MessageName.SYNTAX_ERROR));
                                 ScratchDBMSParser.ReInit(System.in);
                         }
                 }
@@ -128,7 +129,7 @@ if (m.getMessagename() == MessageName.DROP_SUCCESS)
       }
     case SELECT:{
       selectQuery();
-m = Message.getSelect();
+m = new Message(MessageName.SELECT);
       break;
       }
     case INSERT:{
@@ -136,8 +137,7 @@ m = Message.getSelect();
       break;
       }
     case DELETE:{
-      deleteQuery();
-m = Message.getDelete();
+      m = deleteQuery();
       break;
       }
     case SHOW:{
@@ -165,7 +165,7 @@ m = Message.getDelete();
 tablename = tok.toString();
                         t = DBManager.getDBManager().findTable(tablename);
                         if (t != null)
-                            m = Message.getTableExistence();
+                            m = new Message(MessageName.TABLE_EXISTENCE_ERROR);
                         t = new Table(tablename);
     m1 = tableElementList(t);
 if (m != null)
@@ -173,7 +173,7 @@ if (m != null)
             if (m1 != null)
                 {if ("" != null) return m1;}
             DBManager.getDBManager().addTable(t);
-            m = Message.getCreateTableSuccess();
+            m = new Message(MessageName.CREATE_TABLE_SUCCESS);
             m.setNameArg(tablename);
             {if ("" != null) return m;}
     throw new Error("Missing return statement in function");
@@ -213,7 +213,7 @@ Iterator<Attribute> it1 = attrList.iterator();
             while (it1.hasNext()) {
                 Attribute attr = it1.next();
                 if (!attr.getAttributeType().isValid()) {
-                    {if ("" != null) return Message.getCharLength();}
+                    {if ("" != null) return new Message(MessageName.CHAR_LENGTH_ERROR);}
                 }
                 m = t.addAttribute(attr);
                 if (m != null)
@@ -237,7 +237,7 @@ Iterator<Attribute> it1 = attrList.iterator();
                     List<String> bList = arr.subList(index + 1, arr.size());
                 Table foreign_table = DBManager.getDBManager().findTable(tablename);
                 if (foreign_table == null)
-                    {if ("" != null) return Message.getReferenceTableExistence();}
+                    {if ("" != null) return new Message(MessageName.REFERENCE_TABLE_EXISTENCE_ERROR);}
                 else
                     m = t.setForeignKey(new ArrayList(aList), foreign_table, new ArrayList(bList));
                     if (m != null)
@@ -426,7 +426,7 @@ tablename = tok.toString();
     tok = jj_consume_token(LEGAL_IDENT);
     jj_consume_token(SEMICOLON);
 tablename = tok.toString();
-                    m = Message.getDescTable();
+                    m = new Message(MessageName.DESC_TABLE);
                     m.setNameArg(tablename);
                         {if ("" != null) return m;}
     throw new Error("Missing return statement in function");
@@ -437,7 +437,7 @@ tablename = tok.toString();
     jj_consume_token(SHOW);
     jj_consume_token(TABLES);
     jj_consume_token(SEMICOLON);
-{if ("" != null) return Message.getShowTables();}
+{if ("" != null) return new Message(MessageName.SHOW_TABLES);}
     throw new Error("Missing return statement in function");
   }
 
@@ -480,8 +480,8 @@ tablename = tok.toString();
     }
   }
 
-  static final public void selectedColumn() throws ParseException {
-    tableColumn();
+  static final public void selectedColumn() throws ParseException {String t = null;
+    tableColumn(t);
     switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
     case AS:{
       jj_consume_token(AS);
@@ -494,11 +494,12 @@ tablename = tok.toString();
     }
   }
 
-  static final public void tableExpression() throws ParseException {
+  static final public void tableExpression() throws ParseException {String t = null;
+BooleanValueExpression bve = null;
     fromClause();
     switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
     case WHERE:{
-      whereClause();
+      whereClause(bve, t);
       break;
       }
     default:
@@ -544,13 +545,17 @@ tablename = tok.toString();
     }
   }
 
-  static final public void whereClause() throws ParseException {
+  static final public Message whereClause(BooleanValueExpression bve, String t) throws ParseException {Message m = null;
     jj_consume_token(WHERE);
-    booleanValueExpression();
+    m = booleanValueExpression(bve, t);
+{if ("" != null) return m;}
+    throw new Error("Missing return statement in function");
   }
 
-  static final public void booleanValueExpression() throws ParseException {
-    booleanTerm();
+  static final public Message booleanValueExpression(BooleanValueExpression b, String t) throws ParseException {Message m = null;
+    Message m1 = null;
+    /* eliminate left recursion */
+             m = booleanTerm(b, t);
     label_6:
     while (true) {
       switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
@@ -563,12 +568,18 @@ tablename = tok.toString();
         break label_6;
       }
       jj_consume_token(OR);
-      booleanTerm();
+      m1 = booleanTerm(b, t);
+if (m == null) m = m1;
     }
+{if ("" != null) return m;}
+    throw new Error("Missing return statement in function");
   }
 
-  static final public void booleanTerm() throws ParseException {
-    booleanFactor();
+  static final public Message booleanTerm(BooleanValueExpression b, String t) throws ParseException {Message m = null;
+    Message m1 = null;
+    BooleanTerm bt = new BooleanTerm();
+    /* eliminate left recursion */
+            m = booleanFactor(bt, t);
     label_7:
     while (true) {
       switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
@@ -581,34 +592,46 @@ tablename = tok.toString();
         break label_7;
       }
       jj_consume_token(AND);
-      booleanFactor();
+      m1 = booleanFactor(bt, t);
+if (m == null) m = m1;
     }
+b.addTerm(bt);
+            {if ("" != null) return m;}
+    throw new Error("Missing return statement in function");
   }
 
-  static final public void booleanFactor() throws ParseException {
+  static final public Message booleanFactor(BooleanTerm bt, String t) throws ParseException {Message m = null;
+    Token tok = null;
+    BooleanFactor bf = new BooleanFactor();
     switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
     case NOT:{
-      jj_consume_token(NOT);
+      tok = jj_consume_token(NOT);
       break;
       }
     default:
       jj_la1[17] = jj_gen;
       ;
     }
-    booleanTest();
+    m = booleanTest(bf, t);
+if (tok != null)
+                        bf.setNot();
+                    bt.addFactor(bf);
+                {if ("" != null) return m;}
+    throw new Error("Missing return statement in function");
   }
 
-  static final public void booleanTest() throws ParseException {
+  static final public Message booleanTest(BooleanFactor bf, String t) throws ParseException {Message m = null;
+    BooleanTest bte = new BooleanTest();
     switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
     case LEGAL_IDENT:
     case INT_VALUE:
     case DATE_VALUE:
     case CHAR_STRING:{
-      predicate();
+      m = predicate(bte, t);
       break;
       }
     case LEFT_PAREN:{
-      parenthesizedBooleanExpression();
+      m = parenthesizedBooleanExpression(bte, t);
       break;
       }
     default:
@@ -616,24 +639,34 @@ tablename = tok.toString();
       jj_consume_token(-1);
       throw new ParseException();
     }
+bf.setTest(bte);
+            {if ("" != null) return m;}
+    throw new Error("Missing return statement in function");
   }
 
-  static final public void parenthesizedBooleanExpression() throws ParseException {
+  static final public Message parenthesizedBooleanExpression(BooleanTest bte, String t) throws ParseException {BooleanValueExpression bve = new BooleanValueExpression();
+    ParenthesizedBooleanExpression pbe;
+    Message m = null;
     jj_consume_token(LEFT_PAREN);
-    booleanValueExpression();
+    m = booleanValueExpression(bve, t);
     jj_consume_token(RIGHT_PAREN);
+pbe = new ParenthesizedBooleanExpression(bve);
+        bte.setParen(pbe);
+        {if ("" != null) return m;}
+    throw new Error("Missing return statement in function");
   }
 
-  static final public void predicate() throws ParseException {
+  static final public Message predicate(BooleanTest bte, String t) throws ParseException {Message m = null;
+    Predicate pred = new Predicate();
     switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
     case LEGAL_IDENT:{
-      identifierPredicate();
+      m = identifierPredicate(pred, t);
       break;
       }
     case INT_VALUE:
     case DATE_VALUE:
     case CHAR_STRING:{
-      constantPredicate();
+      m = constantPredicate(pred, t);
       break;
       }
     default:
@@ -641,18 +674,51 @@ tablename = tok.toString();
       jj_consume_token(-1);
       throw new ParseException();
     }
+bte.setPredicate(pred);
+            {if ("" != null) return m;}
+    throw new Error("Missing return statement in function");
   }
 
-  static final public void identifierPredicate() throws ParseException {
-    tableColumn();
+  static final public Message identifierPredicate(Predicate pred, String t) throws ParseException {Message m = null;
+    IdentifierPredicate idPred = new IdentifierPredicate();
+    CompareOperand c;
+    Token tok;
+    String operator;
+    boolean b;
+    Pair <Message, Attribute> p;
+    Pair <Message, CompareOperand> p1;
+    Attribute attr;
+    CompareOperation compOp;
+    NullOperation nullOp;
+    TypeName t1 = null, t2 = null;
+    p = tableColumn(t);
+m = p.getKey();
+            attr = p.getValue();
+            if (m == null) {
+                idPred.setID(attr);
+                t1 = attr.getAttributeType().getTypename();
+            }
     switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
     case COMP_OP:{
-      jj_consume_token(COMP_OP);
-      compOperand();
+      tok = jj_consume_token(COMP_OP);
+      p1 = compOperand(t);
+if (m == null)
+                        m = p1.getKey();
+                    if (m == null) {
+                c = p1.getValue();
+                t2 = c.getTypename();
+                if (t1 != t2)
+                    {if ("" != null) return new Message(MessageName.WHERE_INCOMPARABLE);}
+                operator = tok.toString();
+                compOp = new CompareOperation(c, operator);
+                idPred.setCompOperation(compOp);
+            }
       break;
       }
     case IS:{
-      nullOperation();
+      b = nullOperation();
+nullOp = new NullOperation(b);
+                            idPred.setNullOperation(nullOp);
       break;
       }
     default:
@@ -660,24 +726,58 @@ tablename = tok.toString();
       jj_consume_token(-1);
       throw new ParseException();
     }
+pred.setIdPredicate(idPred);
+                            {if ("" != null) return m;}
+    throw new Error("Missing return statement in function");
   }
 
-  static final public void constantPredicate() throws ParseException {
-    comparableValue();
-    jj_consume_token(COMP_OP);
-    compOperand();
+  static final public Message constantPredicate(Predicate pred, String t) throws ParseException {Message m = null;
+    Value v;
+    Token tok;
+    String operator;
+    CompareOperand c;
+    Pair <Message, CompareOperand> p;
+    ConstantPredicate constPred = new ConstantPredicate();
+    CompareOperation compOp;
+    TypeName t1 = null, t2 = null;
+    v = comparableValue();
+constPred.setConst(v);
+            t1 = v.getTypename();
+    tok = jj_consume_token(COMP_OP);
+    p = compOperand(t);
+m = p.getKey();
+                    if (m == null) {
+                        c = p.getValue();
+                        t2 = c.getTypename();
+                        if (t1 != t2)
+                           {if ("" != null) return new Message(MessageName.WHERE_INCOMPARABLE);}
+                operator = tok.toString();
+                compOp = new CompareOperation(c, operator);
+                constPred.setCompOperation(compOp);
+                }
+                pred.setConstPredicate(constPred);
+                {if ("" != null) return m;}
+    throw new Error("Missing return statement in function");
   }
 
-  static final public void compOperand() throws ParseException {
+  static final public Pair<Message, CompareOperand> compOperand(String t) throws ParseException {Value v;
+    Pair<Message, Attribute> p;
+    CompareOperand c = new CompareOperand();
+    Message m = null;
     switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
     case INT_VALUE:
     case DATE_VALUE:
     case CHAR_STRING:{
-      comparableValue();
+      v = comparableValue();
+c.setValue(v);
       break;
       }
     case LEGAL_IDENT:{
-      tableColumn();
+      p = tableColumn(t);
+m = p.getKey();
+                   if (m == null) {
+                        c.setAttribute(p.getValue());
+                   }
       break;
       }
     default:
@@ -685,6 +785,8 @@ tablename = tok.toString();
       jj_consume_token(-1);
       throw new ParseException();
     }
+{if ("" != null) return new Pair<Message, CompareOperand>(m, c);}
+    throw new Error("Missing return statement in function");
   }
 
   static final public Value comparableValue() throws ParseException {Token t;
@@ -722,11 +824,11 @@ cd = t.toString();
     throw new Error("Missing return statement in function");
   }
 
-  static final public void nullOperation() throws ParseException {
+  static final public boolean nullOperation() throws ParseException {Token tok = null;
     jj_consume_token(IS);
     switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
     case NOT:{
-      jj_consume_token(NOT);
+      tok = jj_consume_token(NOT);
       break;
       }
     default:
@@ -734,6 +836,11 @@ cd = t.toString();
       ;
     }
     jj_consume_token(NULL);
+if (tok == null)
+                {if ("" != null) return true;}
+           else
+                {if ("" != null) return false;}
+    throw new Error("Missing return statement in function");
   }
 
 /* insert statement */
@@ -749,7 +856,7 @@ tablename = t.toString();
     jj_consume_token(SEMICOLON);
 if (m == null) {
                         Berkeley.getBerkeley().insertRecord(tablename, rec);
-                        m = Message.getInsertSuccess();
+                        m = new Message(MessageName.INSERT_SUCCESS);
                     }
                     {if ("" != null) return m;}
     throw new Error("Missing return statement in function");
@@ -778,7 +885,7 @@ if (m == null) {
     Table table;
 table = DBManager.getDBManager().findTable(tablename);
         if (table == null)
-            m = Message.getNoSuchTable();
+            m = new Message(MessageName.NO_SUCH_TABLE);
         else if (arr != null)
             m = Record.verifyColumnList(arr, table);
     jj_consume_token(VALUES);
@@ -833,13 +940,18 @@ v = new Value();
   }
 
 /* delete statement */
-  static final public void deleteQuery() throws ParseException {
+  static final public Message deleteQuery() throws ParseException {Token tok;
+    String tablename;
+    Table t;
+    BooleanValueExpression bve = new BooleanValueExpression();
+    Message m = null;
     jj_consume_token(DELETE);
     jj_consume_token(FROM);
-    jj_consume_token(LEGAL_IDENT);
+    tok = jj_consume_token(LEGAL_IDENT);
+tablename = tok.toString();
     switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
     case WHERE:{
-      whereClause();
+      m = whereClause(bve, tablename);
       break;
       }
     default:
@@ -847,20 +959,61 @@ v = new Value();
       ;
     }
     jj_consume_token(SEMICOLON);
+if (m == null) {
+                if (bve.isEmpty()) {
+                    m = Berkeley.getBerkeley().removeRecord(tablename, null);
+                }
+                else {
+                    m = Berkeley.getBerkeley().removeRecord(tablename, bve);
+                }
+            }
+            {if ("" != null) return m;}
+    throw new Error("Missing return statement in function");
   }
 
-  static final public void tableColumn() throws ParseException {
-    jj_consume_token(LEGAL_IDENT);
+  static final public Pair<Message, Attribute> tableColumn(String t) throws ParseException {Message m;
+    Token tok1;
+    Token tok2;
+    String tablename = null;
+    String columnname = null;
+    Attribute attr;
+    Table table;
+    tok1 = jj_consume_token(LEGAL_IDENT);
     switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
     case PERIOD:{
       jj_consume_token(PERIOD);
-      jj_consume_token(LEGAL_IDENT);
+      tok2 = jj_consume_token(LEGAL_IDENT);
+tablename = tok1.toString();
+                   columnname = tok2.toString();
       break;
       }
     default:
       jj_la1[28] = jj_gen;
       ;
     }
+table = DBManager.getDBManager().findTable(t);
+                    if (table == null) {
+                m = new Message(MessageName.NO_SUCH_TABLE);
+                {if ("" != null) return new Pair<Message, Attribute>(m, null);}
+                    }
+
+                    if (tablename == null) {
+                        columnname = tok1.toString();
+                    }
+            attr = table.findAttribute(columnname);
+            if (attr == null) {
+                m = new Message(MessageName.WHERE_COLUMN_NOT_EXIST);
+                {if ("" != null) return new Pair<Message, Attribute>(m, null);}
+            }
+            if (tablename != null) {
+                if (!t.equalsIgnoreCase(tablename)) {
+                   m = new Message(MessageName.WHERE_TABLE_NOT_SPECIFIED);
+                   {if ("" != null) return new Pair<Message, Attribute>(m, null);}
+                }
+            }
+
+            {if ("" != null) return new Pair<Message, Attribute>(null, attr);}
+    throw new Error("Missing return statement in function");
   }
 
   static private boolean jj_initialized_once = false;
