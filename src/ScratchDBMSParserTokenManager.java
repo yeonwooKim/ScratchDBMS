@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Iterator;
 import javafx.util.Pair;
+import java.util.Arrays;
 
 /** Token Manager. */
 @SuppressWarnings("unused")public class ScratchDBMSParserTokenManager implements ScratchDBMSParserConstants {

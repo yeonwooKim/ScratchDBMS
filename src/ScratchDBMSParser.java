@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Iterator;
 import javafx.util.Pair;
+import java.util.Arrays;
 
 enum BufferName { DEFINITION, CONSTRAINT }
 
@@ -39,28 +40,31 @@ class Buffer {
     private static Pair<Message, Attribute> getAttribute(Pair<String, String> tableColumn, String tablename) {
         String tn = tableColumn.getKey();
         String cn = tableColumn.getValue();
+        Attribute ret = null;
 
         Table t = DBManager.getDBManager().findTable(tablename);
         if (t == null)
             return new Pair<Message, Attribute>(new Message(MessageName.NO_SUCH_TABLE), null);
 
+        String[] tablenames = tablename.split("@");
+        ArrayList<String> arr = new ArrayList<String>(Arrays.asList(tablenames));
+        if (tn != null && !arr.contains(tn))
+            return new Pair<Message, Attribute>(new Message(MessageName.WHERE_TABLE_NOT_SPECIFIED), null);
+
         Attribute attr = t.findAttributeAlias(cn);
         if (tn == null && attr != null)
-            return new Pair<Message, Attribute>(null, attr);
-
-        if (tn != null && DBManager.getDBManager().findTable(tn) == null &&
-            DBManager.getDBManager().findTableAlias(tn) == null)
-            return new Pair<Message, Attribute>(new Message(MessageName.WHERE_TABLE_NOT_SPECIFIED), null);
+            ret = attr;
         if (t.hasAttribute(tn, cn)) {
-            attr = t.findAttribute(cn);
-            if (attr == null)
+            attr = t.findAttribute(tn, cn);
+            if (attr == null || ret != null)
                 return new Pair<Message, Attribute>(new Message(MessageName.WHERE_AMBIGUOUS_REFERENCE), null);
+            ret = attr;
         }
-        else {
+        else if (ret == null) {
             return new Pair<Message, Attribute>(new Message(MessageName.WHERE_COLUMN_NOT_EXIST), null);
         }
 
-        return new Pair<Message, Attribute>(null, attr);
+        return new Pair<Message, Attribute>(null, ret);
     }
         public static void main(String args[]) throws ParseException
         {
