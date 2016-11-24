@@ -10,7 +10,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 /* Berkeley class is in charge of opening, closing the berkely db,
-   updating and retrieving database manager inside for each successful creation and drop
+   updating and retrieving database manager inside for each successful creation and drop,
+   deleting, inserting, selecting records from DBMS
  */
 public class Berkeley {
     private static Berkeley berk = null; // singleton class
@@ -23,6 +24,22 @@ public class Berkeley {
         }
         return berk;
     }
+    private static byte[] serialize(Object obj) throws IOException {
+        try(ByteArrayOutputStream b = new ByteArrayOutputStream()){
+            try(ObjectOutputStream o = new ObjectOutputStream(b)){
+                o.writeObject(obj);
+            }
+            return b.toByteArray();
+        }
+    }
+    private static Object deserialize(byte[] bytes) throws IOException, ClassNotFoundException {
+        try(ByteArrayInputStream b = new ByteArrayInputStream(bytes)){
+            try(ObjectInputStream o = new ObjectInputStream(b)){
+                return o.readObject();
+            }
+        }
+    }
+
 
     public void open() {
         EnvironmentConfig envConfig = new EnvironmentConfig();
@@ -46,23 +63,6 @@ public class Berkeley {
             dbEnv.close();
     }
 
-    private static byte[] serialize(Object obj) throws IOException {
-        try(ByteArrayOutputStream b = new ByteArrayOutputStream()){
-            try(ObjectOutputStream o = new ObjectOutputStream(b)){
-                o.writeObject(obj);
-            }
-            return b.toByteArray();
-        }
-    }
-
-    private static Object deserialize(byte[] bytes) throws IOException, ClassNotFoundException {
-        try(ByteArrayInputStream b = new ByteArrayInputStream(bytes)){
-            try(ObjectInputStream o = new ObjectInputStream(b)){
-                return o.readObject();
-            }
-        }
-    }
-
     public void updateManager() {
         // Update manager data in file whenever manager changes (drop / create table)
         Cursor cursor = null;
@@ -79,8 +79,7 @@ public class Berkeley {
             cursor.put(key, data);
             cursor.close();
         } catch (Exception e) {
-            e.printStackTrace();
-            cursor.close();
+            if (cursor != null) cursor.close();
         }
     }
 
@@ -97,24 +96,34 @@ public class Berkeley {
             cursor.close();
             return m;
         } catch (Exception e) {
-            cursor.close();
+            if (cursor != null) cursor.close();
             return null;
         }
     }
 
-    public void insertRecord(String tablename, Record rec) {
+    public void removeTable(String tableName) { // Deletes all records in the table with given tableName
+        DatabaseEntry key;
+
+        try {
+            key = new DatabaseEntry(tableName.getBytes("UTF-8"));
+            db.delete(null, key);
+        } catch (Exception e) {
+        }
+    }
+
+    public void insertRecord(String tableName, Record rec) {
         Cursor cursor = null;
         DatabaseEntry key;
         DatabaseEntry data;
 
         try {
             cursor = db.openCursor(null, null);
-            key = new DatabaseEntry(tablename.getBytes("UTF-8"));
+            key = new DatabaseEntry(tableName.getBytes("UTF-8"));
             data = new DatabaseEntry(serialize(rec));
             cursor.put(key, data);
             cursor.close();
         } catch (Exception e) {
-            cursor.close();
+            if (cursor != null) cursor.close();
         }
     }
 
@@ -139,7 +148,7 @@ public class Berkeley {
             cursor = db.openCursor(null, null);
             key = new DatabaseEntry(tablename.getBytes("UTF-8"));
             OperationStatus os = cursor.getSearchKey(key, data, LockMode.DEFAULT);
-            if (os == OperationStatus.NOTFOUND) {
+            if (os != OperationStatus.SUCCESS) {
                 cursor.close();
                 return false;
             }
@@ -153,18 +162,8 @@ public class Berkeley {
             cursor.close();
             return false;
         } catch (Exception e) {
-            cursor.close();
+            if (cursor != null) cursor.close();
             return false;
-        }
-    }
-
-    public void removeTable(String tablename) {
-        DatabaseEntry key;
-
-        try {
-            key = new DatabaseEntry(tablename.getBytes("UTF-8"));
-            db.delete(null, key);
-        } catch (Exception e) {
         }
     }
 
@@ -200,7 +199,21 @@ public class Berkeley {
 
             cursor.close();
         } catch (Exception e) {
-            cursor.close();
+            if (cursor != null) cursor.close();
+        }
+    }
+
+    private void deleteCascade(Table t, Record rec) {
+        ArrayList<Table> r = t.getReferredList();
+        Iterator<Table> it = r.iterator();
+        Table refTable;
+        ArrayList<Integer> index;
+        ArrayList<Integer> primaryKey = t.getPrimaryKey();
+        ArrayList<Value> values = rec.getIndices(primaryKey);
+        while (it.hasNext()) {
+            refTable = it.next();
+            index = refTable.getForeignKey(t);
+            cascadeToNull(refTable.getTableName(), index, values);
         }
     }
 
@@ -219,20 +232,6 @@ public class Berkeley {
             }
         }
         return true;
-    }
-
-    private void deleteCascade(Table t, Record rec) {
-        ArrayList<Table> r = t.getReferredList();
-        Iterator<Table> it = r.iterator();
-        Table refTable;
-        ArrayList<Integer> index;
-        ArrayList<Integer> primaryKey = t.getPrimaryKey();
-        ArrayList<Value> values = rec.getIndices(primaryKey);
-        while (it.hasNext()) {
-            refTable = it.next();
-            index = refTable.getForeignKey(t);
-            cascadeToNull(refTable.getTableName(), index, values);
-        }
     }
 
     private boolean isCascadable(Table t) {
@@ -254,58 +253,50 @@ public class Berkeley {
         return true;
     }
 
-    private void incrDeleteSuccess(Message m) {
-        String[] nums = m.getNameArg().split(" ");
-        m.setNameArg(Integer.toString(Integer.parseInt(nums[0]) + 1) + " " + nums[1]);
-    }
-
-    private void incrDeleteFailure(Message m) {
-        String[] nums = m.getNameArg().split(" ");
-        m.setNameArg(nums[0] + " " + Integer.toString(Integer.parseInt(nums[1]) + 1));
-    }
-
-    public Message removeRecord(String tablename, BooleanValueExpression bve) {
+    public Message removeRecord(String tableName, BooleanValueExpression bve) {
+        int success = 0;
+        int failure = 0;
         Message m = new Message(MessageName.DELETE_SUCCESS);
-        m.setNameArg("0 0");
-        Table t = DBManager.getDBManager().findTable(tablename);
+        Table t = DBManager.getDBManager().findTable(tableName);
         if (t == null) {
             return new Message(MessageName.NO_SUCH_TABLE);
         }
-        boolean cascadable = isCascadable(t);
+        boolean cascade = isCascadable(t);
         Cursor cursor = null;
         DatabaseEntry key;
         DatabaseEntry data = new DatabaseEntry();
         Record rec;
         try {
             cursor = db.openCursor(null, null);
-            key = new DatabaseEntry(tablename.getBytes("UTF-8"));
+            key = new DatabaseEntry(tableName.getBytes("UTF-8"));
             OperationStatus os = cursor.getSearchKey(key, data, LockMode.DEFAULT);
-            if (os == OperationStatus.NOTFOUND) {
+            if (os != OperationStatus.SUCCESS) {
+                m.setNameArg(success + " " + failure);
                 cursor.close();
                 return m;
             }
             do {
                 rec = (Record) deserialize(data.getData());
                 if (bve == null || bve.eval(t, rec)) {
-                    if (cascadable) {
+                    if (cascade) {
                         deleteCascade(t, rec);
-                        incrDeleteSuccess(m);
+                        success ++;
                         cursor.delete();
                     } else {
                         if (isNonCascadeDeletable(t, rec)) {
-                            incrDeleteSuccess(m);
+                            success ++;
                             cursor.delete();
                         } else
-                            incrDeleteFailure(m);
+                            failure ++;
                     }
                 }
             } while (cursor.get(key, data, Get.NEXT_DUP, null) != null);
 
             cursor.close();
+            m.setNameArg(success + " " + failure);
             return m;
         } catch (Exception e) {
-            e.printStackTrace();
-            cursor.close();
+            if (cursor != null) cursor.close();
             return null;
         }
     }
@@ -333,12 +324,12 @@ public class Berkeley {
         }
     }
 
-    public void select(String tablename, BooleanValueExpression bve, ArrayList<Integer> projection) {
-        Table t = DBManager.getDBManager().findTable(tablename);
+    public void select(String tableName, BooleanValueExpression bve, ArrayList<Integer> projection) {
+        Table t = DBManager.getDBManager().findTable(tableName);
         ArrayList<String> names = t.getNames(projection);
         MessagePrinter.selectionSucceeded(names);
 
-        String[] tables = tablename.split("@");
+        String[] tables = tableName.split("@");
         ArrayList<Cursor> cursors = new ArrayList<>();
         ArrayList<DatabaseEntry> datas = new ArrayList<>();
         try {
@@ -363,7 +354,7 @@ public class Berkeley {
                     arr.addAll(rec.getValues());
                 }
                 Record newRecord = new Record(arr);
-                if (bve == null || bve.eval(DBManager.getDBManager().findTable(tablename), newRecord)) {
+                if (bve == null || bve.eval(DBManager.getDBManager().findTable(tableName), newRecord)) {
                     ArrayList<Value> res = (projection == null) ? newRecord.getValues() : newRecord.getIndices(projection);
                     MessagePrinter.selectionRecordPrint(res);
                 }
@@ -378,7 +369,8 @@ public class Berkeley {
             MessagePrinter.selectionEnded(names);
             Iterator<Cursor> it = cursors.iterator();
             while (it.hasNext()) {
-                it.next().close();
+                Cursor c = it.next();
+                if (c != null) c.close();
             }
         }
     }

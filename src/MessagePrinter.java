@@ -46,7 +46,7 @@ public class MessagePrinter
     }
     public static void printMessage(Message m)
     {
-        MessageName q = m.getMessagename();
+        MessageName q = m.getMessageName();
         String n = m.getNameArg();
         Message m1;
         switch(q)

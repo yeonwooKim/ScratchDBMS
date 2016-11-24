@@ -148,13 +148,13 @@ MessagePrinter.printMessage(m);
     switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
     case CREATE:{
       m = createTableQuery();
-if (m.getMessagename() == MessageName.CREATE_TABLE_SUCCESS)
+if (m.getMessageName() == MessageName.CREATE_TABLE_SUCCESS)
                         Berkeley.getBerkeley().updateManager();
       break;
       }
     case DROP:{
       m = dropTableQuery();
-if (m.getMessagename() == MessageName.DROP_SUCCESS)
+if (m.getMessageName() == MessageName.DROP_SUCCESS)
                                 Berkeley.getBerkeley().updateManager();
       break;
       }

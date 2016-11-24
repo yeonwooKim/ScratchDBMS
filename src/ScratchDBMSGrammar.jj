@@ -198,14 +198,14 @@ Message query() :
 	 (
 		m = createTableQuery()
 		{
-		    if (m.getMessagename() == MessageName.CREATE_TABLE_SUCCESS)
+		    if (m.getMessageName() == MessageName.CREATE_TABLE_SUCCESS)
 		        Berkeley.getBerkeley().updateManager();
 		}
 	 )
 	 | (
 		 m = dropTableQuery()
 		 {
-		    if (m.getMessagename() == MessageName.DROP_SUCCESS)
+		    if (m.getMessageName() == MessageName.DROP_SUCCESS)
             		        Berkeley.getBerkeley().updateManager();
 		 }
 		 )

@@ -10,7 +10,7 @@ public class CompareOperation {
         this.operator = operator;
     }
 
-		// < COMP_OP : "<" | ">" | "=" | ">=" | "<=" | "!=" >
+    // < COMP_OP : "<" | ">" | "=" | ">=" | "<=" | "!=" >
     public boolean eval(Table t, Attribute attr, Value v, Record r) {
         if (v == null) {
             int index = t.getAttrList().indexOf(attr);

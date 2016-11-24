@@ -9,9 +9,9 @@ public class Attribute implements Serializable {
     private Type attrType;
     private String attrName;
     private boolean isPrimaryKey;
-    private int foreignKey;
+    private int foreignKey; // Contains the index of the foreign key list in table
     private boolean isNotNull;
-    private int index;
+    private int index; // Temporary variable used in insert
     private String tablename = null;
     private String tableAlias = null;
     private String alias = null;
@@ -31,15 +31,7 @@ public class Attribute implements Serializable {
     public String getAttributeName() {
         return attrName;
     }
-
-    public boolean isPrimaryKey() {
-        return isPrimaryKey;
-    }
-
-    public void setPrimaryKey() {
-        isPrimaryKey = true;
-        isNotNull = true;
-    }
+    public String getAlias() { return alias; }
 
     public int getForeignKey() {
         return foreignKey;
@@ -47,25 +39,28 @@ public class Attribute implements Serializable {
 
     public String getTablename() { return tablename; }
     public String getTableAlias() { return tableAlias; }
-    public String getAlias() { return alias; }
 
+    public boolean isPrimaryKey() {
+        return isPrimaryKey;
+    }
+    public boolean isNotNull() { return isNotNull; }
+
+    public void setPrimaryKey() {
+        isPrimaryKey = true;
+        isNotNull = true;
+    }
     public void setForeignKey(int f) {
         foreignKey = f;
     }
-
-    public boolean isNotNull() {
-        return isNotNull;
-    }
-
     public void setNotNull() {
         isNotNull = true;
     }
 
-    public void setIndex(int index) { this.index = index; }
 
+    public void setAlias(String alias) { this.alias = alias; }
     public void setTablename(String tablename) { this.tablename = tablename; }
     public void setTableAlias(String tableAlias) { this.tableAlias = tableAlias; }
-    public void setAlias(String alias) { this.alias = alias; }
 
+    public void setIndex(int index) { this.index = index; }
     public int getIndex() { return index; }
 }
