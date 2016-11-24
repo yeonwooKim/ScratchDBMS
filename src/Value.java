@@ -90,22 +90,19 @@ public class Value implements Serializable, Comparable<Value> {
         return false;
     }
 
-    public void print() {
+    public String toString() {
         if (typename == null) {
-            System.out.print("NULL ");
-            return;
+            return "NULL";
         }
         switch(typename) {
             case INT:
-                System.out.print(intVal + " ");
-                break;
+                return Integer.toString(intVal);
             case CHAR:
-                System.out.print(stringVal + " ");
-                break;
+                return stringVal;
             case DATE:
-                System.out.print(dateVal + " ");
-                break;
+                return dateVal;
         }
+        return null;
     }
 
     @Override

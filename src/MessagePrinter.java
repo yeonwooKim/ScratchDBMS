@@ -1,3 +1,6 @@
+import java.util.ArrayList;
+import java.util.Iterator;
+
 public class MessagePrinter
 {
     public static void printPrompt()
@@ -13,6 +16,33 @@ public class MessagePrinter
     private static void insertionFailed() { System.out.print("Insertion has failed: "); }
     private static void selectionFailed() {
         System.out.print("Selection has failed: ");
+    }
+    public static void selectionRecordPrint(ArrayList<Value> arr) {
+        Iterator<Value> it = arr.iterator();
+        while (it.hasNext()) {
+            System.out.printf("| %-19s", it.next().toString());
+        }
+        System.out.println("|");
+    }
+    public static void selectionSucceeded(ArrayList<String> projection) {
+        int size = projection.size();
+        for (int i = 0 ; i < size ; i ++)
+            System.out.print("+--------------------");
+        System.out.println("+");
+        Iterator<String> it = projection.iterator();
+        while (it.hasNext()) {
+            System.out.printf("| %-19s", it.next().toUpperCase());
+        }
+        System.out.println("|");
+        for (int i = 0 ; i < size ; i ++)
+            System.out.print("+--------------------");
+        System.out.println("+");
+    }
+    public static void selectionEnded(ArrayList<String> projection) {
+        int size = projection.size();
+        for (int i = 0 ; i < size ; i ++)
+            System.out.print("+--------------------");
+        System.out.println("+");
     }
     public static void printMessage(Message m)
     {

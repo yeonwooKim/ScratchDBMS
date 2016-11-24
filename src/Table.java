@@ -229,4 +229,28 @@ public class Table implements Serializable {
     public String getAlias() {
         return alias;
     }
+
+    private String getName(int index) {
+        Attribute attr = attrList.get(index);
+        String name = attr.getAlias();
+        if (name != null)
+            return name;
+        return attr.getAttributeName();
+    }
+    public ArrayList<String> getNames(ArrayList<Integer> projection) {
+        ArrayList<String> names = new ArrayList<>();
+        if (projection == null) {
+            int size = attrList.size();
+            for (int i = 0 ; i < size ; i ++) {
+                names.add(getName(i));
+            }
+        }
+        else {
+            Iterator<Integer> it = projection.iterator();
+            while (it.hasNext()) {
+                names.add(getName(it.next()));
+            }
+        }
+        return names;
+    }
 }

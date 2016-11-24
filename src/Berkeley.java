@@ -5,6 +5,7 @@
 import com.sleepycat.je.*;
 
 import java.io.*;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Iterator;
 
@@ -361,6 +362,10 @@ public class Berkeley {
     }
 
     public void select(String tablename, BooleanValueExpression bve, ArrayList<Integer> projection) {
+        Table t = DBManager.getDBManager().findTable(tablename);
+        ArrayList<String> names = t.getNames(projection);
+        MessagePrinter.selectionSucceeded(names);
+
         String[] tables = tablename.split("@");
         ArrayList<Cursor> cursors = new ArrayList<>();
         ArrayList<DatabaseEntry> datas = new ArrayList<>();
@@ -368,7 +373,7 @@ public class Berkeley {
             for (int i = 0; i < tables.length; i++) {
                 Cursor cursor = db.openCursor(null, null);
                 DatabaseEntry key;
-                DatabaseEntry data = null;
+                DatabaseEntry data;
                 key = new DatabaseEntry(tables[i].getBytes("UTF-8"));
                 data = new DatabaseEntry();
                 OperationStatus os = cursor.getSearchKey(key, data, LockMode.DEFAULT);
@@ -387,20 +392,18 @@ public class Berkeley {
                 }
                 Record newRecord = new Record(arr);
                 if (bve == null || bve.eval(DBManager.getDBManager().findTable(tablename), newRecord)) {
-                    //TODO: print these values
                     ArrayList<Value> res = (projection == null) ? newRecord.getValues() : newRecord.getIndices(projection);
-                    Iterator<Value> itPrint = res.iterator();
-                    while (itPrint.hasNext()) {
-                        itPrint.next().print();
-                    }
-                    System.out.println();
+                    MessagePrinter.selectionRecordPrint(res);
                 }
             } while(incrCursor(tables, cursors, datas, tables.length));
+
+            MessagePrinter.selectionEnded(names);
             Iterator<Cursor> it = cursors.iterator();
             while (it.hasNext()) {
                 it.next().close();
             }
         } catch (Exception e) {
+            MessagePrinter.selectionEnded(names);
             Iterator<Cursor> it = cursors.iterator();
             while (it.hasNext()) {
                 it.next().close();
