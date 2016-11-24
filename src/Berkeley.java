@@ -143,17 +143,13 @@ public class Berkeley {
                 cursor.close();
                 return false;
             }
-            if (recordHasValue(data, index, values)) {
-                cursor.close();
-                return true;
-            }
-
-            while (cursor.get(key, data, Get.NEXT_DUP, null) != null) {
+            do {
                 if (recordHasValue(data, index, values)) {
                     cursor.close();
                     return true;
                 }
-            }
+            } while (cursor.get(key, data, Get.NEXT_DUP, null) != null);
+
             cursor.close();
             return false;
         } catch (Exception e) {
@@ -192,23 +188,16 @@ public class Berkeley {
                 cursor.close();
                 return;
             }
-            Record rec = (Record) deserialize(data.getData());
-            if (rec.getIndices(index).equals(values)) {
-                recordToNull(rec, index);
-                cursor.delete();
-                data = new DatabaseEntry(serialize(rec));
-                db.put(null, key, data);
-            }
-
-            while (cursor.get(key, data, Get.NEXT_DUP, null) != null) {
-                rec = (Record) deserialize(data.getData());
+            do {
+                Record rec = (Record) deserialize(data.getData());
                 if (rec.getIndices(index).equals(values)) {
                     recordToNull(rec, index);
                     cursor.delete();
                     data = new DatabaseEntry(serialize(rec));
                     db.put(null, key, data);
                 }
-            }
+            } while (cursor.get(key, data, Get.NEXT_DUP, null) != null);
+
             cursor.close();
         } catch (Exception e) {
             cursor.close();
@@ -295,40 +284,23 @@ public class Berkeley {
                 cursor.close();
                 return m;
             }
-            rec = (Record) deserialize(data.getData());
-            if (bve == null || bve.eval(t, rec)) {
-                if (cascadable) {
-                    deleteCascade(t, rec);
-                    incrDeleteSuccess(m);
-                    cursor.delete();
-                }
-                else {
-                    if (isNonCascadeDeletable(t, rec)){
-                        incrDeleteSuccess(m);
-                        cursor.delete();
-                    }
-                    else
-                        incrDeleteFailure(m);
-                }
-            }
-            while (cursor.get(key, data, Get.NEXT_DUP, null) != null) {
+            do {
                 rec = (Record) deserialize(data.getData());
                 if (bve == null || bve.eval(t, rec)) {
                     if (cascadable) {
                         deleteCascade(t, rec);
                         incrDeleteSuccess(m);
                         cursor.delete();
-                    }
-                    else {
+                    } else {
                         if (isNonCascadeDeletable(t, rec)) {
                             incrDeleteSuccess(m);
                             cursor.delete();
-                        }
-                        else
+                        } else
                             incrDeleteFailure(m);
                     }
                 }
-            }
+            } while (cursor.get(key, data, Get.NEXT_DUP, null) != null);
+
             cursor.close();
             return m;
         } catch (Exception e) {
@@ -395,7 +367,7 @@ public class Berkeley {
                     ArrayList<Value> res = (projection == null) ? newRecord.getValues() : newRecord.getIndices(projection);
                     MessagePrinter.selectionRecordPrint(res);
                 }
-            } while(incrCursor(tables, cursors, datas, tables.length));
+            } while (incrCursor(tables, cursors, datas, tables.length));
 
             MessagePrinter.selectionEnded(names);
             Iterator<Cursor> it = cursors.iterator();

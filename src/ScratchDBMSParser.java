@@ -48,7 +48,12 @@ class Buffer {
 
         String[] tablenames = tablename.split("@");
         ArrayList<String> arr = new ArrayList<String>(Arrays.asList(tablenames));
-        if (tn != null && !arr.contains(tn))
+        ArrayList<String> alias = new ArrayList<String>();
+        Iterator<String> it = arr.iterator();
+        while (it.hasNext()) {
+            alias.add(DBManager.getDBManager().findTable(it.next()).getAlias());
+        }
+        if (tn != null && !arr.contains(tn) && !alias.contains(tn))
             return new Pair<Message, Attribute>(new Message(MessageName.WHERE_TABLE_NOT_SPECIFIED), null);
 
         Attribute attr = t.findAttributeAlias(cn);
