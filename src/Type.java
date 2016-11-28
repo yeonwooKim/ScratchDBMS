@@ -9,13 +9,9 @@ public class Type implements Comparable<Type>, Serializable {
         this.lenChar = char_length;
     }
 
-    public TypeName getTypename() {
-        return typename;
-    }
+    public TypeName getTypename() { return typename; }
 
-    public int getLenChar() {
-        return lenChar;
-    }
+    public int getLenChar() { return lenChar; }
 
     public boolean isValid() {
         if (typename == TypeName.CHAR && lenChar <= 0)

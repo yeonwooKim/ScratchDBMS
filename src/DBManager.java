@@ -14,9 +14,7 @@ public class DBManager implements Serializable {
     private static DBManager manager = null;
     private ArrayList<Table> tables;
 
-    private DBManager() {
-        tables = new ArrayList<>();
-    }
+    private DBManager() { tables = new ArrayList<>(); }
 
     public static DBManager getDBManager() {
         if (manager == null)
@@ -24,9 +22,7 @@ public class DBManager implements Serializable {
         return manager;
     }
 
-    public static void setDBManager(DBManager m) {
-        manager = m;
-    }
+    public static void setDBManager(DBManager m) { manager = m; }
 
     public Table findTable(String tablename) {
         Iterator<Table> it = tables.iterator();
@@ -38,9 +34,7 @@ public class DBManager implements Serializable {
         return null;
     }
 
-    public void addTable(Table t) {
-        tables.add(t);
-    } // Called when CREATE TABLE requested
+    public void addTable(Table t) { tables.add(t); } // Called when CREATE TABLE requested
 
     public Message dropTable(String tablename) { // Called when DROP TABLE requested
         Message m;

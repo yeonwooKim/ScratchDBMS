@@ -12,11 +12,7 @@ public class Message {
 
     public MessageName getMessageName() { return messageName; }
 
-    public String getNameArg() {
-        return nameArg;
-    }
+    public String getNameArg() { return nameArg; }
 
-    public void setNameArg(String nameArg) {
-        this.nameArg = nameArg;
-    }
+    public void setNameArg(String nameArg) { this.nameArg = nameArg; }
 }

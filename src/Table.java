@@ -22,36 +22,29 @@ public class Table implements Serializable {
         referredList = new ArrayList<>();
         referringList = new ArrayList<>();
         primaryKey = new ArrayList<>();
+        alias = null;
     }
 
-    public Table(ArrayList<Attribute> attrList, String tableName) { //JOIN table constructor
+    public Table(ArrayList<Attribute> attrList, String tableName, String tableAlias) { //JOIN table constructor
         this.attrList = attrList;
         this.tableName = tableName;
         referredList = new ArrayList<>();
         referringList = new ArrayList<>();
         primaryKey = new ArrayList<>();
+        this.alias = tableAlias;
     }
 
-    public ArrayList<Attribute> getAttrList() {
-        return attrList;
-    }
-
-    public ArrayList<Table> getReferredList() {
-        return referredList;
-    }
-
+    public ArrayList<Attribute> getAttrList() { return attrList; }
+    public ArrayList<Table> getReferredList() { return referredList; }
     public ArrayList<Pair<Table, ArrayList<Integer>>> getReferringList() { return referringList; }
-
-    public ArrayList<Integer> getPrimaryKey() {
-        return primaryKey;
-    }
+    public ArrayList<Integer> getPrimaryKey() { return primaryKey; }
 
     public boolean hasAttribute(String tableName, String attrName) { //JOIN table method
         Iterator<Attribute> it = attrList.iterator();
         while (it.hasNext()) {
             Attribute n = it.next();
             if (attrName.equals(n.getAttributeName()) &&
-                    (tableName == null || tableName.equals(n.getTablename()) || tableName.equals(n.getTableAlias())))
+                    (tableName == null || tableName.equals(n.getTableName()) || tableName.equals(n.getTableAlias())))
                 return true;
         }
         return false;
@@ -63,8 +56,8 @@ public class Table implements Serializable {
         while (it.hasNext()) {
             Attribute n = it.next();
             if (attrName.equals(n.getAttributeName()) &&
-                    (tableName == null || tableName.equals(n.getTablename()) || tableName.equals(n.getTableAlias()))) {
-                if (attr == null)
+                    (tableName == null || tableName.equals(n.getTableName()) || tableName.equals(n.getTableAlias()))) {
+                if (attr == null || attr == n)
                     attr = n;
                 else
                     return null;
@@ -83,14 +76,29 @@ public class Table implements Serializable {
         return null;
     }
 
-    public Attribute findAttributeAlias(String alias) {
+    public boolean hasAttributeAlias(String alias) {
         Iterator<Attribute> it = attrList.iterator();
         while (it.hasNext()) {
             Attribute n = it.next();
-            if (alias.equals(n.getAlias()))
-                return n;
+            if (alias != null && alias.equals(n.getAlias()))
+                return true;
         }
-        return null;
+        return false;
+
+    }
+    public Attribute findAttributeAlias(String alias) {
+        Iterator<Attribute> it = attrList.iterator();
+        Attribute attr = null;
+        while (it.hasNext()) {
+            Attribute n = it.next();
+            if (alias != null && alias.equals(n.getAlias())) {
+                if (attr == null || attr == n)
+                    attr = n;
+                else
+                    return null;
+            }
+        }
+        return attr;
     }
 
     public Message setPrimaryKey(ArrayList<String> p) {
@@ -123,9 +131,7 @@ public class Table implements Serializable {
         return null;
     }
 
-    public String getTableName() {
-        return tableName;
-    }
+    public String getTableName() { return tableName; }
 
     private boolean checkDuplicate(String attrName) {
         Iterator<Attribute> it = attrList.iterator();
@@ -141,18 +147,14 @@ public class Table implements Serializable {
         if (checkDuplicate(attr.getAttributeName())) {
             return new Message(MessageName.DUPLICATE_COLUMN_DEF_ERROR);
         }
-        attr.setTablename(tableName);
+        attr.setTableName(tableName);
         attrList.add(attr);
         return null;
     }
 
-    public void addReferred(Table t) {
-        referredList.add(t);
-    }
+    public void addReferred(Table t) { referredList.add(t); }
 
-    public void removeReferred(Table t) {
-        referredList.remove(t);
-    }
+    public void removeReferred(Table t) { referredList.remove(t); }
 
     public void addReferring(Table t, ArrayList<Integer> arr) {
         Pair<Table, ArrayList<Integer>> p = new Pair<>(t, arr);
@@ -226,9 +228,7 @@ public class Table implements Serializable {
             it.next().setTableAlias(alias);
         }
     }
-    public String getAlias() {
-        return alias;
-    }
+    public String getAlias() { return alias; }
 
     private String getName(int index) {
         Attribute attr = attrList.get(index);

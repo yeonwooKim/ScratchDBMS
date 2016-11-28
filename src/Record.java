@@ -9,17 +9,11 @@ import java.util.Iterator;
 public class Record implements Serializable {
     private ArrayList<Value> values;
 
-    public Record() {
-       values = new ArrayList<>();
-    }
+    public Record() { values = new ArrayList<>(); }
 
-    public Record(ArrayList<Value> values) {
-        this.values = values;
-    }
+    public Record(ArrayList<Value> values) { this.values = values; }
 
-    public Value getIndex(int i) {
-        return values.get(i);
-    }
+    public Value getIndex(int i) { return values.get(i); }
 
     public ArrayList<Value> getIndices(ArrayList<Integer> arr) {
         Iterator<Integer> it = arr.iterator();
@@ -30,9 +24,7 @@ public class Record implements Serializable {
         return ret;
     }
 
-    public ArrayList<Value> getValues() {
-        return values;
-    }
+    public ArrayList<Value> getValues() { return values; }
 
     public void setIndex(int i, Value v) { values.set(i, v); }
 
@@ -142,7 +134,7 @@ public class Record implements Serializable {
                 i ++;
             }
         }
-        if (Berkeley.getBerkeley().tableHasRecord(table.getTableName(), table.getPrimaryKey(), primaryKey)) {
+        if (primaryKey.size() != 0 && Berkeley.getBerkeley().tableHasRecord(table.getTableName(), table.getPrimaryKey(), primaryKey)) {
             return new Message(MessageName.INSERT_DUPLICATE_PRIMARY_KEY);
         }
         return checkReferentialConstraint(table, foreignKey);

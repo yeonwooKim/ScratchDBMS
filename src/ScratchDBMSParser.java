@@ -47,18 +47,20 @@ class Buffer {
             return new Pair<Message, Attribute>(new Message(MessageName.NO_SUCH_TABLE), null);
 
         String[] tablenames = tablename.split("@");
-        ArrayList<String> arr = new ArrayList<String>(Arrays.asList(tablenames));
-        ArrayList<String> alias = new ArrayList<String>();
-        Iterator<String> it = arr.iterator();
-        while (it.hasNext()) {
-            alias.add(DBManager.getDBManager().findTable(it.next()).getAlias());
-        }
-        if (tn != null && !arr.contains(tn) && !alias.contains(tn))
+        ArrayList<String> names = new ArrayList<String>(Arrays.asList(tablenames));
+        String[] tableAliases = t.getAlias().split("@");
+        ArrayList<String> aliases = new ArrayList<String>(Arrays.asList(tableAliases));
+
+        if (tn != null && !names.contains(tn) && !aliases.contains(tn))
             return new Pair<Message, Attribute>(new Message(MessageName.WHERE_TABLE_NOT_SPECIFIED), null);
 
-        Attribute attr = t.findAttributeAlias(cn);
-        if (tn == null && attr != null)
+        Attribute attr = null;
+        if (tn == null && t.hasAttributeAlias(cn)) { // attribute aliasing
+            attr = t.findAttributeAlias(cn);
+            if (attr == null)
+                return new Pair<Message, Attribute>(new Message(MessageName.WHERE_AMBIGUOUS_REFERENCE), null);
             ret = attr;
+        }
         if (t.hasAttribute(tn, cn)) {
             attr = t.findAttribute(tn, cn);
             if (attr == null || ret != null)
@@ -552,6 +554,7 @@ alias = tok.toString().toLowerCase();
     Attribute attr;
     Table newTable = null;
     String newTablename = "";
+    String newTableAlias = "";
     ArrayList<Attribute> newAttr = new ArrayList<Attribute>();
     ArrayList<Integer> projection = new ArrayList<Integer>();
     tables = fromClause();
@@ -565,18 +568,19 @@ Iterator<Pair<String, String>> itTable = tables.iterator();
                      break;
                 }
             t.setAlias(table.getValue());
-            newAttr.addAll(t.getAttrList());
+            if (table.getValue() != null) {
+                newTableAlias += table.getValue();
+                newTableAlias += "@";
+            }
+            Iterator<Attribute> itAttr = t.getAttrList().iterator();
+            while (itAttr.hasNext()) {
+                newAttr.add((Attribute) ((Attribute)itAttr.next()).clone());
+            }
             newTablename += table.getKey();
-            if (itTable.hasNext())
-                newTablename += "@";
+            newTablename += "@";
             }
-            if (tables.size() != 1) {
-            newTable = new Table(newAttr, newTablename);
-            DBManager.getDBManager().addTable(newTable);
-            }
-            else {
-                newTable = DBManager.getDBManager().findTable(newTablename);
-            }
+        newTable = new Table(newAttr, newTablename, newTableAlias);
+        DBManager.getDBManager().addTable(newTable);
             if (m == null) {
                 if (columns == null) {
                      projection = null;
@@ -628,9 +632,7 @@ if (m == null) {
                 }
                 m = new Message(MessageName.SELECT_SUCCESS);
             }
-            if (tables.size() != 1) {
-                DBManager.getDBManager().dropTable(newTablename);
-            }
+            DBManager.getDBManager().dropTable(newTablename);
             {if ("" != null) return m;}
     throw new Error("Missing return statement in function");
   }
