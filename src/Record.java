@@ -28,6 +28,7 @@ public class Record implements Serializable {
 
     public void setIndex(int i, Value v) { values.set(i, v); }
 
+    // Add foreign key to foreign key list
     private static void addForeignKeyList(ArrayList<ArrayList<Value>> foreignKey, int index, Value v,
                                           int attrIndex, Table table) {
         if (index != -1) {
@@ -53,6 +54,8 @@ public class Record implements Serializable {
         }
         return null;
     }
+
+    // Add values to the record
     public Message addValues(boolean explicit, ArrayList<Value> values, Table table) {
         ArrayList<Attribute> attrList = table.getAttrList();
         Iterator<Attribute> it = attrList.iterator();
@@ -65,7 +68,7 @@ public class Record implements Serializable {
                 arr.add(null);
             foreignKey.add(arr);
         }
-        if (!explicit) {
+        if (!explicit) { // column name list not given
             Iterator<Value> it2 = values.iterator();
             Attribute attr;
             Value v;
@@ -140,6 +143,7 @@ public class Record implements Serializable {
         return checkReferentialConstraint(table, foreignKey);
     }
 
+    // Set index for the given column name list
     public static Message verifyColumnList(ArrayList<String> list, Table table) {
         Iterator<String> it = list.iterator();
         String s;

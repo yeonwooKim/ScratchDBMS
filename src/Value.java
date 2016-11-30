@@ -30,7 +30,7 @@ public class Value implements Serializable, Comparable<Value> {
             if (t == TypeName.CHAR) {
                 int len = typ.getLenChar();
                 if (len < stringVal.length())
-                    stringVal = stringVal.substring(0, len);
+                    stringVal = stringVal.substring(0, len); // Truncate string if length overflow
             }
             return true;
         }
@@ -90,6 +90,8 @@ public class Value implements Serializable, Comparable<Value> {
         return false;
     }
 
+    // Implemented for select query, changes value to string
+    @Override
     public String toString() {
         if (typename == null) {
             return "NULL";

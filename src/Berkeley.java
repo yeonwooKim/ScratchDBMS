@@ -175,6 +175,7 @@ public class Berkeley {
     }
 
     private void cascadeToNull(String tablename, ArrayList<Integer> index, ArrayList<Value> values) {
+        // Cascade all the records in the given table with the given value to null
         Cursor cursor = null;
         DatabaseEntry key;
         DatabaseEntry data = new DatabaseEntry();
@@ -272,7 +273,7 @@ public class Berkeley {
             }
             do {
                 rec = (Record) deserialize(data.getData());
-                if (bve == null || bve.eval(t, rec) == Result.TRUE) {
+                if (bve == null || bve.eval(t, rec) == Result.TRUE) { // Check boolean value expression
                     Iterator<Table> it = refTable.iterator();
                     Table referredTable;
                     i = 0;
@@ -280,10 +281,11 @@ public class Berkeley {
                     while (it.hasNext()) {
                         deletable = true;
                         referredTable = it.next();
-                        if (cascade[i++]) {
+                        if (cascade[i++]) { // cascadable
                             continue;
                         }
                         else if (!isNonCascadeDeletable(t, rec, referredTable)) {
+                            // not cascadable and has corresponding records
                             deletable = false;
                             break;
                         }
@@ -361,12 +363,14 @@ public class Berkeley {
                 }
                 Record newRecord = new Record(arr);
                 if (bve == null || bve.eval(DBManager.getDBManager().findTable(tableName), newRecord) == Result.TRUE) {
+                    // projection
                     ArrayList<Value> res = (projection == null) ? newRecord.getValues() : newRecord.getIndices(projection);
                     MessagePrinter.selectionRecordPrint(res);
                 }
             } while (incrCursor(tables, cursors, datas, tables.length));
 
             MessagePrinter.selectionEnded(names);
+            // close cursors
             Iterator<Cursor> it = cursors.iterator();
             while (it.hasNext()) {
                 it.next().close();
