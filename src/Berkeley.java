@@ -272,7 +272,7 @@ public class Berkeley {
             }
             do {
                 rec = (Record) deserialize(data.getData());
-                if (bve == null || bve.eval(t, rec)) {
+                if (bve == null || bve.eval(t, rec) == Result.TRUE) {
                     Iterator<Table> it = refTable.iterator();
                     Table referredTable;
                     i = 0;
@@ -360,7 +360,7 @@ public class Berkeley {
                     arr.addAll(rec.getValues());
                 }
                 Record newRecord = new Record(arr);
-                if (bve == null || bve.eval(DBManager.getDBManager().findTable(tableName), newRecord)) {
+                if (bve == null || bve.eval(DBManager.getDBManager().findTable(tableName), newRecord) == Result.TRUE) {
                     ArrayList<Value> res = (projection == null) ? newRecord.getValues() : newRecord.getIndices(projection);
                     MessagePrinter.selectionRecordPrint(res);
                 }

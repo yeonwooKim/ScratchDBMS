@@ -31,7 +31,7 @@ public class IdentifierPredicate {
         this.nullOp = nullOp;
     }
 
-    public boolean eval(Table table, Record r) {
+    public Result eval(Table table, Record r) {
         if (t == IDPredType.COMP) {
             return compOp.eval(table, attr, null, r);
         }

@@ -18,13 +18,19 @@ public class BooleanFactor {
         not = true;
     }
 
-    public boolean eval(Table t, Record r) {
-        if (not && !bt.eval(t, r)) {
-            return true;
+    public Result eval(Table t, Record r) {
+        switch (bt.eval(t, r)) {
+            case TRUE:
+                if (not)
+                    return Result.FALSE;
+                return Result.TRUE;
+            case FALSE:
+                if (not)
+                    return Result.TRUE;
+                return Result.FALSE;
+            case UNKNOWN:
+                return Result.UNKNOWN;
         }
-        if (!not && bt.eval(t, r)) {
-            return true;
-        }
-        return false;
+        return Result.UNKNOWN;
     }
 }

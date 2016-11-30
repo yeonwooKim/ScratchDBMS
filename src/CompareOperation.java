@@ -11,7 +11,7 @@ public class CompareOperation {
     }
 
     // < COMP_OP : "<" | ">" | "=" | ">=" | "<=" | "!=" >
-    public boolean eval(Table t, Attribute attr, Value v, Record r) {
+    public Result eval(Table t, Attribute attr, Value v, Record r) {
         if (v == null) {
             int index = t.getAttrList().indexOf(attr);
             v = r.getIndex(index);
@@ -22,37 +22,37 @@ public class CompareOperation {
             v1 = r.getIndex(index);
         }
         if (v.isNull() || v1.isNull())
-            return false;
+            return Result.UNKNOWN;
 
         if (operator.equals("<")) {
             if (v.compareTo(v1) < 0)
-                return true;
-            return false;
+                return Result.TRUE;
+            return Result.FALSE;
         }
         else if (operator.equals(">")) {
             if (v.compareTo(v1) > 0)
-                return true;
-            return false;
+                return Result.TRUE;
+            return Result.FALSE;
         }
         else if (operator.equals("=")) {
             if (v.compareTo(v1) == 0)
-                return true;
-            return false;
+                return Result.TRUE;
+            return Result.FALSE;
         }
         else if (operator.equals(">=")) {
             if (v.compareTo(v1) >= 0)
-                return true;
-            return false;
+                return Result.TRUE;
+            return Result.FALSE;
         }
         else if (operator.equals("<=")) {
             if (v.compareTo(v1) <= 0)
-                return true;
-            return false;
+                return Result.TRUE;
+            return Result.FALSE;
         }
         else {
             if (v.compareTo(v1) != 0)
-                return true;
-            return false;
+                return Result.TRUE;
+            return Result.FALSE;
         }
     }
 }

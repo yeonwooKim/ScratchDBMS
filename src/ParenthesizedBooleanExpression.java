@@ -8,7 +8,7 @@ public class ParenthesizedBooleanExpression {
         this.bve = bve;
     }
 
-    public boolean eval(Table t, Record r) {
+    public Result eval(Table t, Record r) {
         return bve.eval(t, r);
     }
 }

@@ -1,6 +1,3 @@
-/**
- * Created by yeonwoo_kim on 11/21/16.
- */
 enum TestType {PAREN, PRED};
 public class BooleanTest {
     private ParenthesizedBooleanExpression pbe;
@@ -23,7 +20,7 @@ public class BooleanTest {
         this.pred = pred;
     }
 
-    public boolean eval(Table table, Record r) {
+    public Result eval(Table table, Record r) {
         if (t == TestType.PRED) {
             return pred.eval(table, r);
         }

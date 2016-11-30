@@ -16,13 +16,22 @@ public class BooleanValueExpression {
         arr.add(bt);
     }
 
-    public boolean eval(Table t, Record r) {
+    public Result eval(Table t, Record r) {
         Iterator<BooleanTerm> it = arr.iterator();
+        boolean unknown = false;
         while (it.hasNext()) {
-            if (it.next().eval(t, r)) {
-                return true;
+            switch (it.next().eval(t, r)) {
+                case TRUE:
+                    return Result.TRUE;
+                case FALSE:
+                    continue;
+                case UNKNOWN:
+                    unknown = true;
+                    continue;
             }
         }
-        return false;
+        if (unknown)
+            return Result.UNKNOWN;
+        return Result.FALSE;
     }
 }

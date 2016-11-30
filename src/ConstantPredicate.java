@@ -18,7 +18,7 @@ public class ConstantPredicate {
         this.compOp = compOp;
     }
 
-    public boolean eval(Table t, Record r) {
+    public Result eval(Table t, Record r) {
         return compOp.eval(t, null, lop, r);
     }
 }

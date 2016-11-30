@@ -23,7 +23,7 @@ public class Predicate {
         this.constPred = constPred;
     }
 
-    public boolean eval(Table table, Record r) {
+    public Result eval(Table table, Record r) {
         if (t == PredType.ID) {
             return idPred.eval(table, r);
         }

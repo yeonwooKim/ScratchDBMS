@@ -15,12 +15,22 @@ public class BooleanTerm {
         arr.add(bf);
     }
 
-    public boolean eval(Table t, Record r) {
+    public Result eval(Table t, Record r) {
         Iterator<BooleanFactor> it = arr.iterator();
+        boolean unknown = false;
         while (it.hasNext()) {
-            if (!it.next().eval(t, r))
-                return false;
+            switch (it.next().eval(t, r)) {
+                case FALSE:
+                    return Result.FALSE;
+                case UNKNOWN:
+                    unknown = true;
+                    continue;
+                case TRUE:
+                    continue;
+            }
         }
-        return true;
+        if (unknown)
+            return Result.UNKNOWN;
+        return Result.TRUE;
     }
 }

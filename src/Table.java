@@ -14,6 +14,7 @@ public class Table implements Serializable {
     private ArrayList<Pair<Table, ArrayList<Integer>>> referringList;
     private ArrayList<Integer> primaryKey;
     private String tableName;
+    private String tableAlias;
 
     public Table(String tableName) {
         this.tableName = tableName.toLowerCase();
@@ -21,16 +22,19 @@ public class Table implements Serializable {
         referredList = new ArrayList<>();
         referringList = new ArrayList<>();
         primaryKey = new ArrayList<>();
+        tableAlias = null;
     }
 
-    public Table(ArrayList<Attribute> attrList, String tableName) { //JOIN table constructor
+    public Table(ArrayList<Attribute> attrList, String tableName, String tableAlias) { //JOIN table constructor
         this.attrList = attrList;
         this.tableName = tableName;
         referredList = new ArrayList<>();
         referringList = new ArrayList<>();
         primaryKey = new ArrayList<>();
+        this.tableAlias = tableAlias;
     }
 
+    public String getTableAlias() { return tableAlias; }
     public ArrayList<Attribute> getAttrList() { return attrList; }
     public ArrayList<Table> getReferredList() { return referredList; }
     public ArrayList<Pair<Table, ArrayList<Integer>>> getReferringList() { return referringList; }
@@ -71,31 +75,6 @@ public class Table implements Serializable {
                 return n;
         }
         return null;
-    }
-
-    public boolean hasAttributeAlias(String alias) {
-        Iterator<Attribute> it = attrList.iterator();
-        while (it.hasNext()) {
-            Attribute n = it.next();
-            if (alias != null && alias.equals(n.getAlias()))
-                return true;
-        }
-        return false;
-
-    }
-    public Attribute findAttributeAlias(String alias) {
-        Iterator<Attribute> it = attrList.iterator();
-        Attribute attr = null;
-        while (it.hasNext()) {
-            Attribute n = it.next();
-            if (alias != null && alias.equals(n.getAlias())) {
-                if (attr == null || attr == n)
-                    attr = n;
-                else
-                    return null;
-            }
-        }
-        return attr;
     }
 
     public Message setPrimaryKey(ArrayList<String> p) {

@@ -12,12 +12,12 @@ public class NullOperation {
         return isNull;
     }
 
-    public boolean eval(Table t, Attribute attr, Record r) {
+    public Result eval(Table t, Attribute attr, Record r) {
         int index = t.getAttrList().indexOf(attr);
         if (r.getIndex(index).isNull() && isNull)
-            return true;
+            return Result.TRUE;
         if (!r.getIndex(index).isNull() && !isNull)
-            return true;
-        return false;
+            return Result.TRUE;
+        return Result.FALSE;
     }
 }

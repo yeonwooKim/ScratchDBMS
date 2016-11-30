@@ -47,6 +47,10 @@ class Buffer {
 
         String[] tablenames = tablename.split("@");
         ArrayList<String> names = new ArrayList<String>(Arrays.asList(tablenames));
+        String alias = t.getTableAlias();
+        if (alias != null) {
+            names = new ArrayList<String>(Arrays.asList(alias.split("@")));
+        }
 
         if (tn != null && !names.contains(tn))
             return new Pair<Message, Attribute>(new Message(MessageName.WHERE_TABLE_NOT_SPECIFIED), null);
@@ -569,15 +573,17 @@ Iterator<Pair<String, String>> itTable = tables.iterator();
                 newAttr.add(n);
             }
             if (table.getValue() != null) {
-                newTablename += table.getValue();
-                newTablename += "@";
+                newTableAlias += table.getValue();
+                newTableAlias += "@";
             }
             else {
-                newTablename += table.getKey();
-                newTablename += "@";
+                newTableAlias += table.getKey();
+                newTableAlias += "@";
             }
+            newTablename += table.getKey();
+            newTablename += "@";
             }
-        newTable = new Table(newAttr, newTablename);
+        newTable = new Table(newAttr, newTablename, newTableAlias);
         DBManager.getDBManager().addTable(newTable);
             if (m == null) {
                 if (columns == null) {
