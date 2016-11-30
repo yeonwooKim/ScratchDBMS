@@ -217,38 +217,26 @@ public class Berkeley {
         }
     }
 
-    private boolean isNonCascadeDeletable(Table t, Record rec) {
-        ArrayList<Table> r = t.getReferredList();
-        Iterator<Table> it = r.iterator();
-        Table refTable;
+    private boolean isNonCascadeDeletable(Table t, Record rec, Table refTable) {
         ArrayList<Integer> index;
         ArrayList<Integer> primaryKey = t.getPrimaryKey();
         ArrayList<Value> values = rec.getIndices(primaryKey);
-        while (it.hasNext()) {
-            refTable = it.next();
-            index = refTable.getForeignKey(t);
-            if (tableHasRecord(refTable.getTableName(), index, values)) {
+        index = refTable.getForeignKey(t);
+        if (tableHasRecord(refTable.getTableName(), index, values)) {
                 return false;
-            }
         }
         return true;
     }
 
-    private boolean isCascadable(Table t) {
-        ArrayList<Table> r = t.getReferredList();
-        Iterator<Table> it = r.iterator();
-        Table refTable;
+    private boolean isCascadable(Table t, Table refTable) {
         ArrayList<Integer> index;
         ArrayList<Attribute> attr;
-        while (it.hasNext()) {
-            refTable = it.next();
-            index = refTable.getForeignKey(t);
-            attr = refTable.getAttrList();
-            Iterator<Integer> it2 = index.iterator();
-            while (it2.hasNext()) {
-                if (attr.get(it2.next()).isNotNull())
-                    return false;
-            }
+        index = refTable.getForeignKey(t);
+        attr = refTable.getAttrList();
+        Iterator<Integer> it2 = index.iterator();
+        while (it2.hasNext()) {
+            if (attr.get(it2.next()).isNotNull())
+                return false;
         }
         return true;
     }
@@ -261,7 +249,14 @@ public class Berkeley {
         if (t == null) {
             return new Message(MessageName.NO_SUCH_TABLE);
         }
-        boolean cascade = isCascadable(t);
+        ArrayList<Table> refTable = t.getReferredList();
+        boolean[] cascade = new boolean[refTable.size()];
+        Iterator<Table> itTable = t.getReferredList().iterator();
+        int i = 0;
+        while (itTable.hasNext()) {
+           cascade[i++] = isCascadable(t, itTable.next());
+        }
+
         Cursor cursor = null;
         DatabaseEntry key;
         DatabaseEntry data = new DatabaseEntry();
@@ -278,17 +273,28 @@ public class Berkeley {
             do {
                 rec = (Record) deserialize(data.getData());
                 if (bve == null || bve.eval(t, rec)) {
-                    if (cascade) {
-                        deleteCascade(t, rec);
-                        success ++;
-                        cursor.delete();
-                    } else {
-                        if (isNonCascadeDeletable(t, rec)) {
-                            success ++;
-                            cursor.delete();
-                        } else
-                            failure ++;
+                    Iterator<Table> it = refTable.iterator();
+                    Table referredTable;
+                    i = 0;
+                    boolean deletable = true;
+                    while (it.hasNext()) {
+                        deletable = true;
+                        referredTable = it.next();
+                        if (cascade[i++]) {
+                            continue;
+                        }
+                        else if (!isNonCascadeDeletable(t, rec, referredTable)) {
+                            deletable = false;
+                            break;
+                        }
                     }
+                    if (deletable) {
+                        deleteCascade(t, rec);
+                        cursor.delete();
+                        success++;
+                    }
+                    else
+                        failure++;
                 }
             } while (cursor.get(key, data, Get.NEXT_DUP, null) != null);
 
@@ -339,11 +345,11 @@ public class Berkeley {
                 DatabaseEntry data;
                 key = new DatabaseEntry(tables[i].getBytes("UTF-8"));
                 data = new DatabaseEntry();
+                cursors.add(cursor);
                 OperationStatus os = cursor.getSearchKey(key, data, LockMode.DEFAULT);
                 if (os != OperationStatus.SUCCESS) {
                     throw new Exception();
                 }
-                cursors.add(cursor);
                 datas.add(data);
             }
             do {

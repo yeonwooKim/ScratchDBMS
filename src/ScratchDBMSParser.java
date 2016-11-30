@@ -48,10 +48,13 @@ class Buffer {
 
         String[] tablenames = tablename.split("@");
         ArrayList<String> names = new ArrayList<String>(Arrays.asList(tablenames));
-        String[] tableAliases = t.getAlias().split("@");
-        ArrayList<String> aliases = new ArrayList<String>(Arrays.asList(tableAliases));
+        ArrayList<String> aliases = null;
+        if (t.getAlias() != null) {
+            String[] tableAliases = t.getAlias().split("@");
+            aliases = new ArrayList<String>(Arrays.asList(tableAliases));
+        }
 
-        if (tn != null && !names.contains(tn) && !aliases.contains(tn))
+        if (tn != null && !names.contains(tn) && (aliases == null || !aliases.contains(tn)))
             return new Pair<Message, Attribute>(new Message(MessageName.WHERE_TABLE_NOT_SPECIFIED), null);
 
         Attribute attr = null;
@@ -200,9 +203,12 @@ if (m.getMessageName() == MessageName.DROP_SUCCESS)
     tok = jj_consume_token(LEGAL_IDENT);
 tablename = tok.toString().toLowerCase();
                         t = DBManager.getDBManager().findTable(tablename);
-                        if (t != null)
+                        if (t != null) {
                             m = new Message(MessageName.TABLE_EXISTENCE_ERROR);
-                        t = new Table(tablename);
+                            t = null;
+                        }
+                        else
+                            t = new Table(tablename);
     m1 = tableElementList(t);
 if (m != null)
                 {if ("" != null) return m;}
@@ -220,7 +226,7 @@ if (m != null)
     ArrayList<Attribute> attrList = new ArrayList<Attribute>();
     ArrayList<ArrayList<String>> arrList = new ArrayList<ArrayList<String>>();
     jj_consume_token(LEFT_PAREN);
-    b = tableElement(t);
+    b = tableElement();
 if (b.getBufferName() == BufferName.DEFINITION)
                         attrList.add(b.getAttr());
                     else
@@ -237,7 +243,7 @@ if (b.getBufferName() == BufferName.DEFINITION)
         break label_2;
       }
       jj_consume_token(COMMA);
-      b = tableElement(t);
+      b = tableElement();
 if (b.getBufferName() == BufferName.DEFINITION)
                         attrList.add(b.getAttr());
                     else
@@ -245,7 +251,8 @@ if (b.getBufferName() == BufferName.DEFINITION)
     }
     jj_consume_token(RIGHT_PAREN);
     jj_consume_token(SEMICOLON);
-Iterator<Attribute> it1 = attrList.iterator();
+if (t == null) {if ("" != null) return null;}
+            Iterator<Attribute> it1 = attrList.iterator();
             while (it1.hasNext()) {
                 Attribute attr = it1.next();
                 if (!attr.getAttributeType().isValid()) {
@@ -284,16 +291,16 @@ Iterator<Attribute> it1 = attrList.iterator();
     throw new Error("Missing return statement in function");
   }
 
-  static final public Buffer tableElement(Table t) throws ParseException {Attribute attr = null;
+  static final public Buffer tableElement() throws ParseException {Attribute attr = null;
     ArrayList<String> arr = null;
     switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
     case LEGAL_IDENT:{
-      attr = columnDefinition(t);
+      attr = columnDefinition();
       break;
       }
     case PRIMARY:
     case FOREIGN:{
-      arr = tableConstraintDefinition(t);
+      arr = tableConstraintDefinition();
       break;
       }
     default:
@@ -308,7 +315,7 @@ if (attr != null)
     throw new Error("Missing return statement in function");
   }
 
-  static final public Attribute columnDefinition(Table t) throws ParseException {Type typ;
+  static final public Attribute columnDefinition() throws ParseException {Type typ;
         Token tok;
         String columnname;
         Attribute attr;
@@ -331,14 +338,14 @@ attr.setNotNull();
     throw new Error("Missing return statement in function");
   }
 
-  static final public ArrayList<String> tableConstraintDefinition(Table t) throws ParseException {ArrayList<String> arr;
+  static final public ArrayList<String> tableConstraintDefinition() throws ParseException {ArrayList<String> arr;
     switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
     case PRIMARY:{
-      arr = primaryKeyConstraint(t);
+      arr = primaryKeyConstraint();
       break;
       }
     case FOREIGN:{
-      arr = referentialConstraint(t);
+      arr = referentialConstraint();
       break;
       }
     default:
@@ -350,7 +357,7 @@ attr.setNotNull();
     throw new Error("Missing return statement in function");
   }
 
-  static final public ArrayList<String> primaryKeyConstraint(Table t) throws ParseException {ArrayList<String> arr;
+  static final public ArrayList<String> primaryKeyConstraint() throws ParseException {ArrayList<String> arr;
     jj_consume_token(PRIMARY);
     jj_consume_token(KEY);
     arr = columnNameList();
@@ -359,7 +366,7 @@ arr.add(0,"0");
     throw new Error("Missing return statement in function");
   }
 
-  static final public ArrayList<String> referentialConstraint(Table t) throws ParseException {ArrayList<String> arr1;
+  static final public ArrayList<String> referentialConstraint() throws ParseException {ArrayList<String> arr1;
     ArrayList<String> arr2;
     Token tok;
     String tablename;
@@ -576,6 +583,7 @@ Iterator<Pair<String, String>> itTable = tables.iterator();
             while (itAttr.hasNext()) {
                 newAttr.add((Attribute) ((Attribute)itAttr.next()).clone());
             }
+            t.setAlias(null);
             newTablename += table.getKey();
             newTablename += "@";
             }
@@ -1055,7 +1063,10 @@ valArr.add(v);
 valArr.add(v);
     }
     jj_consume_token(RIGHT_PAREN);
-if (m == null) {
+if (m == null && arr != null && valArr.size() != arr.size()) {
+                        m = new Message(MessageName.INSERT_TYPE_MISMATCH);
+                    }
+                    if (m == null) {
                         if (arr == null)
                             explicit = false;
                 m = rec.addValues(explicit, valArr, table);

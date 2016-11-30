@@ -56,10 +56,13 @@ class Buffer {
 
         String[] tablenames = tablename.split("@");
         ArrayList<String> names = new ArrayList<String>(Arrays.asList(tablenames));
-        String[] tableAliases = t.getAlias().split("@");
-        ArrayList<String> aliases = new ArrayList<String>(Arrays.asList(tableAliases));
+        ArrayList<String> aliases = null;
+        if (t.getAlias() != null) {
+            String[] tableAliases = t.getAlias().split("@");
+            aliases = new ArrayList<String>(Arrays.asList(tableAliases));
+        }
 
-        if (tn != null && !names.contains(tn) && !aliases.contains(tn))
+        if (tn != null && !names.contains(tn) && (aliases == null || !aliases.contains(tn)))
             return new Pair<Message, Attribute>(new Message(MessageName.WHERE_TABLE_NOT_SPECIFIED), null);
 
         Attribute attr = null;
@@ -161,7 +164,7 @@ TOKEN :
 		| < NON_QUOTE_CHAR : < DIGIT > | < ALPHABET > | < NON_QUOTE_SPECIAL_CHAR > | " " >
 		| < DIGIT : [ "0"-"9" ] >
 		| < ALPHABET : [ "A"-"Z", "a"-"z" ] >
-		| < NON_QUOTE_SPECIAL_CHAR : "!" | "@" | "#" | "$" | "%" | "^" | "&" | "*" >
+		| < NON_QUOTE_SPECIAL_CHAR : "!" | "@" | "#" | "$" | "%" | "^" | "&" | "*" | "-" | "+" | "(" | ")">
 		| < QUOTE : "\'" >
 }
 
@@ -249,9 +252,12 @@ Message createTableQuery() :
 		{
 		    tablename = tok.toString().toLowerCase();
 			t = DBManager.getDBManager().findTable(tablename);
-			if (t != null)
+			if (t != null) {
 			    m = new Message(MessageName.TABLE_EXISTENCE_ERROR);
-			t = new Table(tablename);
+			    t = null;
+			}
+			else
+			    t = new Table(tablename);
 		}
 	m1 = tableElementList(t)
 	{
@@ -275,7 +281,7 @@ Message tableElementList(Table t) :
 }
 {
 	< LEFT_PAREN >
-		b = tableElement(t)
+		b = tableElement()
 		{
 		    if (b.getBufferName() == BufferName.DEFINITION)
 		        attrList.add(b.getAttr());
@@ -284,7 +290,7 @@ Message tableElementList(Table t) :
 		}
 	(
 	 < COMMA >
-	    b = tableElement(t)
+	    b = tableElement()
 	    {
 		    if (b.getBufferName() == BufferName.DEFINITION)
 		        attrList.add(b.getAttr());
@@ -295,6 +301,7 @@ Message tableElementList(Table t) :
 	< RIGHT_PAREN >
 	< SEMICOLON>
 	{
+	    if (t == null) return null;
 	    Iterator<Attribute> it1 = attrList.iterator();
 	    while (it1.hasNext()) {
 	        Attribute attr = it1.next();
@@ -334,14 +341,14 @@ Message tableElementList(Table t) :
 	}
 }
 
-Buffer tableElement(Table t) :
+Buffer tableElement() :
 {
     Attribute attr = null;
     ArrayList<String> arr = null;
 }
 {
-	((attr = columnDefinition(t))
-		| (arr = tableConstraintDefinition(t)))
+	((attr = columnDefinition())
+		| (arr = tableConstraintDefinition()))
     {
         if (attr != null)
             return new Buffer(BufferName.DEFINITION, attr);
@@ -350,7 +357,7 @@ Buffer tableElement(Table t) :
     }
 }
 
-Attribute columnDefinition(Table t) :
+Attribute columnDefinition() :
 {
 	Type typ;
 	Token tok;
@@ -375,19 +382,19 @@ Attribute columnDefinition(Table t) :
 	}
 }
 
-ArrayList<String> tableConstraintDefinition(Table t) :
+ArrayList<String> tableConstraintDefinition() :
 {
     ArrayList<String> arr;
 }
 {
-	((arr = primaryKeyConstraint(t))
-		| (arr = referentialConstraint(t)))
+	((arr = primaryKeyConstraint())
+		| (arr = referentialConstraint()))
 	{
 	    return arr;
 	}
 }
 
-ArrayList<String> primaryKeyConstraint(Table t) :
+ArrayList<String> primaryKeyConstraint() :
 {
     ArrayList<String> arr;
 }
@@ -400,7 +407,7 @@ ArrayList<String> primaryKeyConstraint(Table t) :
 	}
 }
 
-ArrayList<String> referentialConstraint(Table t) :
+ArrayList<String> referentialConstraint() :
 {
     ArrayList<String> arr1;
     ArrayList<String> arr2;
@@ -618,6 +625,7 @@ Message tableExpression(ArrayList<Pair<Pair<String, String>, String>> columns) :
             while (itAttr.hasNext()) {
                 newAttr.add((Attribute) ((Attribute)itAttr.next()).clone());
             }
+            t.setAlias(null);
             newTablename += table.getKey();
             newTablename += "@";
 	    }
@@ -1044,6 +1052,9 @@ Message valueList(ArrayList<String> arr, String tablename, Record rec) :
 		 )*
 		< RIGHT_PAREN >
 		{
+		    if (m == null && arr != null && valArr.size() != arr.size()) {
+		        m = new Message(MessageName.INSERT_TYPE_MISMATCH);
+		    }
 		    if (m == null) {
 		        if (arr == null)
 		            explicit = false;
