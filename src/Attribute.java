@@ -15,7 +15,6 @@ public class Attribute implements Serializable, Cloneable {
     private int index; // Temporary variable used in insert
     private String alias;
     private String tableName;
-    private String tableAlias;
 
     public Attribute(Type attrType, String attrName) {
         this.attrType = attrType;
@@ -36,7 +35,6 @@ public class Attribute implements Serializable, Cloneable {
     public boolean isNotNull() { return isNotNull; }
     public int getIndex() { return index; }
     public String getTableName() { return tableName; }
-    public String getTableAlias() { return tableAlias; }
 
     public void setPrimaryKey() {
         isPrimaryKey = true;
@@ -47,7 +45,6 @@ public class Attribute implements Serializable, Cloneable {
     public void setAlias(String alias) { this.alias = alias; }
     public void setIndex(int index) { this.index = index; }
     public void setTableName(String tableName) { this.tableName = tableName; }
-    public void setTableAlias(String tableAlias) { this.tableAlias = tableAlias; }
 
     @Override
     public Object clone() {

@@ -14,7 +14,6 @@ public class Table implements Serializable {
     private ArrayList<Pair<Table, ArrayList<Integer>>> referringList;
     private ArrayList<Integer> primaryKey;
     private String tableName;
-    private String alias;
 
     public Table(String tableName) {
         this.tableName = tableName.toLowerCase();
@@ -22,16 +21,14 @@ public class Table implements Serializable {
         referredList = new ArrayList<>();
         referringList = new ArrayList<>();
         primaryKey = new ArrayList<>();
-        alias = null;
     }
 
-    public Table(ArrayList<Attribute> attrList, String tableName, String tableAlias) { //JOIN table constructor
+    public Table(ArrayList<Attribute> attrList, String tableName) { //JOIN table constructor
         this.attrList = attrList;
         this.tableName = tableName;
         referredList = new ArrayList<>();
         referringList = new ArrayList<>();
         primaryKey = new ArrayList<>();
-        this.alias = tableAlias;
     }
 
     public ArrayList<Attribute> getAttrList() { return attrList; }
@@ -44,7 +41,7 @@ public class Table implements Serializable {
         while (it.hasNext()) {
             Attribute n = it.next();
             if (attrName.equals(n.getAttributeName()) &&
-                    (tableName == null || tableName.equals(n.getTableName()) || tableName.equals(n.getTableAlias())))
+                    (tableName == null || tableName.equals(n.getTableName())))
                 return true;
         }
         return false;
@@ -56,7 +53,7 @@ public class Table implements Serializable {
         while (it.hasNext()) {
             Attribute n = it.next();
             if (attrName.equals(n.getAttributeName()) &&
-                    (tableName == null || tableName.equals(n.getTableName()) || tableName.equals(n.getTableAlias()))) {
+                    (tableName == null || tableName.equals(n.getTableName()))) {
                 if (attr == null || attr == n)
                     attr = n;
                 else
@@ -220,15 +217,6 @@ public class Table implements Serializable {
         addReferring(table, indexList);
         return null;
     }
-
-    public void setAlias(String alias) {
-        this.alias = alias;
-        Iterator<Attribute> it = attrList.iterator();
-        while (it.hasNext()) {
-            it.next().setTableAlias(alias);
-        }
-    }
-    public String getAlias() { return alias; }
 
     private String getName(int index) {
         Attribute attr = attrList.get(index);

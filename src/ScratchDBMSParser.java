@@ -40,7 +40,6 @@ class Buffer {
     private static Pair<Message, Attribute> getAttribute(Pair<String, String> tableColumn, String tablename) {
         String tn = tableColumn.getKey();
         String cn = tableColumn.getValue();
-        Attribute ret = null;
 
         Table t = DBManager.getDBManager().findTable(tablename);
         if (t == null)
@@ -48,33 +47,21 @@ class Buffer {
 
         String[] tablenames = tablename.split("@");
         ArrayList<String> names = new ArrayList<String>(Arrays.asList(tablenames));
-        ArrayList<String> aliases = null;
-        if (t.getAlias() != null) {
-            String[] tableAliases = t.getAlias().split("@");
-            aliases = new ArrayList<String>(Arrays.asList(tableAliases));
-        }
 
-        if (tn != null && !names.contains(tn) && (aliases == null || !aliases.contains(tn)))
+        if (tn != null && !names.contains(tn))
             return new Pair<Message, Attribute>(new Message(MessageName.WHERE_TABLE_NOT_SPECIFIED), null);
 
         Attribute attr = null;
-        if (tn == null && t.hasAttributeAlias(cn)) { // attribute aliasing
-            attr = t.findAttributeAlias(cn);
-            if (attr == null)
-                return new Pair<Message, Attribute>(new Message(MessageName.WHERE_AMBIGUOUS_REFERENCE), null);
-            ret = attr;
-        }
         if (t.hasAttribute(tn, cn)) {
             attr = t.findAttribute(tn, cn);
-            if (attr == null || ret != null)
+            if (attr == null)
                 return new Pair<Message, Attribute>(new Message(MessageName.WHERE_AMBIGUOUS_REFERENCE), null);
-            ret = attr;
         }
-        else if (ret == null) {
+        else {
             return new Pair<Message, Attribute>(new Message(MessageName.WHERE_COLUMN_NOT_EXIST), null);
         }
 
-        return new Pair<Message, Attribute>(null, ret);
+        return new Pair<Message, Attribute>(null, attr);
     }
         public static void main(String args[]) throws ParseException
         {
@@ -574,20 +561,23 @@ Iterator<Pair<String, String>> itTable = tables.iterator();
                      m.setNameArg(table.getKey());
                      break;
                 }
-            t.setAlias(table.getValue());
-            if (table.getValue() != null) {
-                newTableAlias += table.getValue();
-                newTableAlias += "@";
-            }
             Iterator<Attribute> itAttr = t.getAttrList().iterator();
             while (itAttr.hasNext()) {
-                newAttr.add((Attribute) ((Attribute)itAttr.next()).clone());
+                Attribute n = (Attribute) itAttr.next().clone();
+                if (table.getValue() != null)
+                    n.setTableName(table.getValue());
+                newAttr.add(n);
             }
-            t.setAlias(null);
-            newTablename += table.getKey();
-            newTablename += "@";
+            if (table.getValue() != null) {
+                newTablename += table.getValue();
+                newTablename += "@";
             }
-        newTable = new Table(newAttr, newTablename, newTableAlias);
+            else {
+                newTablename += table.getKey();
+                newTablename += "@";
+            }
+            }
+        newTable = new Table(newAttr, newTablename);
         DBManager.getDBManager().addTable(newTable);
             if (m == null) {
                 if (columns == null) {
